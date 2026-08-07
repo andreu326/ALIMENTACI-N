@@ -2,9 +2,9 @@
 
 import { createContext, use, useEffect, useMemo, useState } from "react";
 import { seedState } from "@/data/seed";
-import type { Ingredient, MealPrepContextValue, MealPrepState, NutritionTargets, PlannedMeal, Recipe } from "@/types/mealprep";
+import type { Ingredient, MealPrepContextValue, MealPrepState, NutritionTargets, PlannedMeal, MeasurementEntry, Profile, Recipe, TripLogEntry } from "@/types/mealprep";
 
-const STORAGE_KEY = "mealprep-planner:v1";
+const STORAGE_KEY = "mealprep-planner:v5";
 const MealPrepContext = createContext<MealPrepContextValue | null>(null);
 
 function cloneSeed(): MealPrepState {
@@ -16,7 +16,7 @@ function loadState(): { state: MealPrepState; storageAvailable: boolean } {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return { state: cloneSeed(), storageAvailable: true };
     const parsed = JSON.parse(stored) as MealPrepState;
-    if (parsed.version !== 1 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
+    if (parsed.version !== 5 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
     return { state: parsed, storageAvailable: true };
   } catch {
     return { state: cloneSeed(), storageAvailable: false };
@@ -46,6 +46,31 @@ export function MealPrepProvider({ children }: { children: React.ReactNode }) {
 
   const actions = useMemo(() => ({
     setTargets: (targets: NutritionTargets) => setState((current) => ({ ...current, targets })),
+    setProfile: (profile: Profile | null) => setState((current) => ({ ...current, profile })),
+    logWeight: (date: string, kg: number) => setState((current) => ({
+      ...current,
+      weightLog: [...current.weightLog.filter((w) => w.date !== date), { date, kg }]
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    })),
+    removeWeight: (date: string) => setState((current) => ({
+      ...current,
+      weightLog: current.weightLog.filter((w) => w.date !== date),
+    })),
+    logMeasurements: (date: string, values: MeasurementEntry["values"]) => setState((current) => {
+      const previous = current.measurementLog.find((m) => m.date === date);
+      // Se fusiona con lo del mismo día para poder medir en dos tandas.
+      const merged = { date, values: { ...previous?.values, ...values } };
+      return {
+        ...current,
+        measurementLog: [...current.measurementLog.filter((m) => m.date !== date), merged]
+          .sort((a, b) => a.date.localeCompare(b.date)),
+      };
+    }),
+    setTripStatus: (index: number, entry: TripLogEntry | null) => setState((current) => {
+      const tripLog = { ...current.tripLog };
+      if (entry) tripLog[index] = entry; else delete tripLog[index];
+      return { ...current, tripLog };
+    }),
     saveIngredient: (ingredient: Ingredient) => setState((current) => ({ ...current, ingredients: current.ingredients.some((item) => item.id === ingredient.id) ? current.ingredients.map((item) => item.id === ingredient.id ? ingredient : item) : [...current.ingredients, ingredient] })),
     deleteIngredient: (id: string) => setState((current) => ({ ...current, ingredients: current.ingredients.filter((item) => item.id !== id), recipes: current.recipes.map((recipe) => ({ ...recipe, ingredients: recipe.ingredients.filter((line) => line.ingredientId !== id) })), checkedShoppingIds: current.checkedShoppingIds.filter((item) => item !== id) })),
     saveRecipe: (recipe: Recipe) => setState((current) => ({ ...current, recipes: current.recipes.some((item) => item.id === recipe.id) ? current.recipes.map((item) => item.id === recipe.id ? recipe : item) : [...current.recipes, recipe] })),

@@ -1,4 +1,8 @@
-import type { Ingredient, MealPrepState, PurchaseProjection, Recipe, RecipeTotals, ShoppingLine } from "@/types/mealprep";
+import type {
+  Ingredient, MealPrepState, Profile, PurchaseFormat, Recipe, RecipeTotals,
+  MeasurementSite, MeasurementTrend, ShoppingLine, Trip, TripItem, TripPlan,
+  WeightPoint, WeightProjection,
+} from "@/types/mealprep";
 
 export const round = (value: number, digits = 0) => {
   const factor = 10 ** digits;
@@ -6,7 +10,6 @@ export const round = (value: number, digits = 0) => {
 };
 
 export function ingredientUnitCost(ingredient: Ingredient): number {
-  if (ingredient.formats.length === 0) return 0;
   let cheapest = Number.POSITIVE_INFINITY;
   for (const format of ingredient.formats) {
     if (format.quantity > 0) cheapest = Math.min(cheapest, format.price / format.quantity);
@@ -14,11 +17,63 @@ export function ingredientUnitCost(ingredient: Ingredient): number {
   return Number.isFinite(cheapest) ? cheapest : 0;
 }
 
+/**
+ * `value` — minimiza el precio por unidad. Es lo correcto en régimen: el sobrante
+ *   no se pierde porque el horizonte de compra ya viene recortado por la vida útil.
+ * `cash` — minimiza el desembolso del día. Sirve cuando la restricción es la caja
+ *   de ese viernes y no el costo total.
+ */
+export type FormatStrategy = "value" | "cash";
+
+export function pickFormat(
+  ingredient: Ingredient,
+  need: number,
+  strategy: FormatStrategy = "value",
+  /** Consumo diario. Si se entrega, descarta envases que se echarían a perder. */
+  dailyUse?: number,
+) {
+  let best: {
+    format: PurchaseFormat; packages: number; purchased: number;
+    cost: number; unitCost: number; forcedByMinimum: boolean;
+  } | null = null;
+
+  // Un envase que dura más que su vida útil abierto es dinero tirado, por muy
+  // barato que salga el kilo. Si ninguno califica se usan todos igual.
+  let usable = ingredient.formats;
+  if (dailyUse && dailyUse > 0 && ingredient.openLifeDays > 0) {
+    const maxQty = dailyUse * ingredient.openLifeDays;
+    const fits = ingredient.formats.filter((f) => f.quantity <= maxQty);
+    if (fits.length > 0) usable = fits;
+  }
+
+  for (const format of usable) {
+    if (format.quantity <= 0) continue;
+    const byNeed = Math.max(1, Math.ceil(need / format.quantity));
+    const packages = Math.max(format.minQty, byNeed);
+    const purchased = packages * format.quantity;
+    const cost = packages * format.price;
+    const candidate = {
+      format, packages, purchased, cost,
+      unitCost: format.price / format.quantity,
+      forcedByMinimum: packages > byNeed,
+    };
+    if (!best) { best = candidate; continue; }
+
+    const better = strategy === "value"
+      ? candidate.unitCost < best.unitCost
+        || (candidate.unitCost === best.unitCost && candidate.cost < best.cost)
+      : candidate.cost < best.cost
+        || (candidate.cost === best.cost && candidate.purchased < best.purchased);
+    if (better) best = candidate;
+  }
+  return best;
+}
+
 export function getRecipeTotals(recipe: Recipe, ingredients: Ingredient[]): RecipeTotals {
-  const ingredientMap = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
+  const map = new Map(ingredients.map((i) => [i.id, i]));
   const totals: RecipeTotals = { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 };
   for (const line of recipe.ingredients) {
-    const ingredient = ingredientMap.get(line.ingredientId);
+    const ingredient = map.get(line.ingredientId);
     if (!ingredient || ingredient.nutritionBasis <= 0) continue;
     const factor = line.quantity / ingredient.nutritionBasis;
     totals.calories += ingredient.calories * factor;
@@ -37,160 +92,387 @@ export function getRecipeTotals(recipe: Recipe, ingredients: Ingredient[]): Reci
 }
 
 export function getDailyTotals(state: MealPrepState, day: number): RecipeTotals {
-  const recipeMap = new Map(state.recipes.map((recipe) => [recipe.id, recipe]));
+  const recipes = new Map(state.recipes.map((r) => [r.id, r]));
   const totals: RecipeTotals = { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 };
   for (const meal of state.plannedMeals) {
     if (meal.day !== day) continue;
-    const recipe = recipeMap.get(meal.recipeId);
-    if (!recipe) continue;
-    const recipeTotals = getRecipeTotals(recipe, state.ingredients);
+    const recipe = recipes.get(meal.recipeId);
+    if (!recipe || recipe.servings <= 0) continue;
+    const t = getRecipeTotals(recipe, state.ingredients);
     const factor = meal.servings / recipe.servings;
-    totals.calories += recipeTotals.calories * factor;
-    totals.protein += recipeTotals.protein * factor;
-    totals.carbs += recipeTotals.carbs * factor;
-    totals.fat += recipeTotals.fat * factor;
-    totals.cost += recipeTotals.cost * factor;
+    totals.calories += t.calories * factor;
+    totals.protein += t.protein * factor;
+    totals.carbs += t.carbs * factor;
+    totals.fat += t.fat * factor;
+    totals.cost += t.cost * factor;
   }
-  return { calories: round(totals.calories), protein: round(totals.protein, 1), carbs: round(totals.carbs, 1), fat: round(totals.fat, 1), cost: round(totals.cost) };
+  return {
+    calories: round(totals.calories), protein: round(totals.protein, 1),
+    carbs: round(totals.carbs, 1), fat: round(totals.fat, 1), cost: round(totals.cost),
+  };
 }
 
 export function getWeeklyTotals(state: MealPrepState): RecipeTotals {
   const totals: RecipeTotals = { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 };
   for (let day = 0; day < 7; day += 1) {
-    const daily = getDailyTotals(state, day);
-    totals.calories += daily.calories;
-    totals.protein += daily.protein;
-    totals.carbs += daily.carbs;
-    totals.fat += daily.fat;
-    totals.cost += daily.cost;
+    const d = getDailyTotals(state, day);
+    totals.calories += d.calories; totals.protein += d.protein;
+    totals.carbs += d.carbs; totals.fat += d.fat; totals.cost += d.cost;
   }
-  return { calories: round(totals.calories), protein: round(totals.protein, 1), carbs: round(totals.carbs, 1), fat: round(totals.fat, 1), cost: round(totals.cost) };
+  return {
+    calories: round(totals.calories), protein: round(totals.protein, 1),
+    carbs: round(totals.carbs, 1), fat: round(totals.fat, 1), cost: round(totals.cost),
+  };
+}
+
+/** Consumo diario por ingrediente, derivado del plan semanal. */
+export function getDailyUsage(state: MealPrepState): Map<string, number> {
+  const recipes = new Map(state.recipes.map((r) => [r.id, r]));
+  const weekly = new Map<string, number>();
+  for (const meal of state.plannedMeals) {
+    const recipe = recipes.get(meal.recipeId);
+    if (!recipe || recipe.servings <= 0) continue;
+    const factor = meal.servings / recipe.servings;
+    for (const line of recipe.ingredients) {
+      weekly.set(line.ingredientId, (weekly.get(line.ingredientId) ?? 0) + line.quantity * factor);
+    }
+  }
+  const daily = new Map<string, number>();
+  weekly.forEach((qty, id) => daily.set(id, qty / 7));
+  return daily;
 }
 
 export function getShoppingList(state: MealPrepState): ShoppingLine[] {
-  const required = new Map<string, number>();
-  const recipeMap = new Map(state.recipes.map((recipe) => [recipe.id, recipe]));
-  for (const meal of state.plannedMeals) {
-    const recipe = recipeMap.get(meal.recipeId);
-    if (!recipe) continue;
-    const factor = meal.servings / recipe.servings;
-    for (const line of recipe.ingredients) required.set(line.ingredientId, (required.get(line.ingredientId) ?? 0) + line.quantity * factor);
-  }
-
+  const daily = getDailyUsage(state);
   const result: ShoppingLine[] = [];
   for (const ingredient of state.ingredients) {
-    const quantity = required.get(ingredient.id) ?? 0;
-    if (quantity <= 0 || ingredient.formats.length === 0) continue;
-    let best: { label: string; packages: number; purchased: number; cost: number } | null = null;
-    for (const format of ingredient.formats) {
-      const packages = Math.max(1, Math.ceil(quantity / format.quantity));
-      const candidate = { label: format.label, packages, purchased: packages * format.quantity, cost: packages * format.price };
-      if (!best || candidate.cost < best.cost || (candidate.cost === best.cost && candidate.purchased < best.purchased)) best = candidate;
-    }
+    const weekly = (daily.get(ingredient.id) ?? 0) * 7;
+    if (weekly <= 0 || ingredient.formats.length === 0) continue;
+    const best = pickFormat(ingredient, weekly, "value", daily.get(ingredient.id));
     if (!best) continue;
-    const exactWeeksCovered = best.purchased / quantity;
+    const weeksCovered = best.purchased / weekly;
     result.push({
       ingredientId: ingredient.id,
       name: ingredient.name,
       unit: ingredient.unit,
-      required: round(quantity, ingredient.unit === "unidad" ? 0 : 1),
-      formatLabel: best.label,
+      source: ingredient.source,
+      required: round(weekly, ingredient.unit === "unidad" ? 0 : 1),
+      formatLabel: best.format.label,
       packages: best.packages,
       purchased: best.purchased,
-      surplus: round(best.purchased - quantity, ingredient.unit === "unidad" ? 0 : 1),
+      surplus: round(best.purchased - weekly, ingredient.unit === "unidad" ? 0 : 1),
       cost: best.cost,
-      weeksCovered: round(exactWeeksCovered, 1),
-      weeklyCost: round(best.cost / exactWeeksCovered),
+      weeksCovered: round(weeksCovered, 1),
+      weeklyCost: round(best.cost / weeksCovered),
+      forcedByMinimum: best.forcedByMinimum,
     });
   }
   return result.sort((a, b) => b.cost - a.cost);
 }
 
-export function getAmortizedWeeklyShoppingCost(lines: ShoppingLine[]): number {
-  return round(lines.reduce((total, line) => total + line.weeklyCost, 0));
-}
+// ---------- fechas ----------
 
-function parseLocalDate(value: string): Date {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day, 12);
+function parseDate(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y, m - 1, d, 12);
 }
-
-function toDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function toKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
-
 function addDays(date: Date, days: number): Date {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
 }
-
 function addMonths(date: Date, months: number): Date {
   const next = new Date(date);
   next.setMonth(next.getMonth() + months);
   return next;
 }
 
-function shortDate(date: Date): string {
-  return new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short" }).format(date).replace(".", "");
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+export function formatDate(key: string): string {
+  const d = parseDate(key);
+  return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`;
+}
+export function formatMonth(key: string): string {
+  const d = parseDate(key);
+  return `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+}
+export function daysBetween(from: string, to: string): number {
+  return Math.round((parseDate(to).getTime() - parseDate(from).getTime()) / 86_400_000);
 }
 
-export function getPurchaseProjection(lines: ShoppingLine[], startDate = "2026-08-07", months = 11): PurchaseProjection {
-  const start = parseLocalDate(startDate);
-  const end = addMonths(start, months);
-  const inventory = new Map<string, number>();
-  const weeks: PurchaseProjection["weeks"] = [];
+// ---------- viajes ----------
 
-  for (let purchaseDate = start, week = 1; purchaseDate < end; purchaseDate = addDays(purchaseDate, 7), week += 1) {
-    const items: PurchaseProjection["weeks"][number]["items"] = [];
-    for (const line of lines) {
-      const packageQuantity = line.purchased / line.packages;
-      const packageCost = line.cost / line.packages;
-      let available = inventory.get(line.ingredientId) ?? 0;
-      if (available + 0.0001 < line.required) {
-        const packages = Math.ceil((line.required - available) / packageQuantity);
-        available += packages * packageQuantity;
-        items.push({ ingredientId: line.ingredientId, name: line.name, packages, formatLabel: line.formatLabel, cost: round(packages * packageCost) });
-      }
-      inventory.set(line.ingredientId, available - line.required);
+/**
+ * Simula los viajes a Central Mayorista. Sólo los ingredientes con
+ * `source: "mayorista"` obligan a viajar; la feria va por su cuenta.
+ *
+ * En cada viaje se compra para cubrir `targetDays`, recortado por la vida útil
+ * de cada producto. El siguiente viaje cae cuando se agota el primer ingrediente,
+ * que es justamente lo que define la cadencia real.
+ */
+export function getTripPlan(
+  state: MealPrepState,
+  startDate: string,
+  months = 11,
+  targetDays = 30,
+  strategy: FormatStrategy = "value",
+): TripPlan {
+  const daily = getDailyUsage(state);
+  const tracked = state.ingredients.filter(
+    (i) => i.source === "mayorista" && (daily.get(i.id) ?? 0) > 0 && i.formats.length > 0,
+  );
+
+  const start = parseDate(startDate);
+  const end = addMonths(start, months);
+  const stock = new Map<string, number>();
+  const trips: Trip[] = [];
+
+  let cursor = start;
+  let index = 1;
+  let guard = 0;
+
+  while (cursor < end && guard < 400) {
+    guard += 1;
+    const items: TripItem[] = [];
+
+    for (const ingredient of tracked) {
+      const use = daily.get(ingredient.id) ?? 0;
+      const horizon = Math.min(targetDays, ingredient.shelfLifeDays);
+      const have = stock.get(ingredient.id) ?? 0;
+      const need = use * horizon - have;
+      if (need <= 0.0001) continue;
+
+      const best = pickFormat(ingredient, need, strategy, use);
+      if (!best) continue;
+      const after = have + best.purchased;
+      stock.set(ingredient.id, after);
+      items.push({
+        ingredientId: ingredient.id,
+        name: ingredient.name,
+        packages: best.packages,
+        formatLabel: best.format.label,
+        cost: best.cost,
+        coversDays: Math.floor(after / use),
+        forcedByMinimum: best.forcedByMinimum,
+      });
     }
-    weeks.push({
-      week,
-      purchaseDate: toDateKey(purchaseDate),
-      cookDate: toDateKey(addDays(purchaseDate, 2)),
-      cost: items.reduce((sum, item) => sum + item.cost, 0),
+
+    // ¿Cuántos días aguanta la despensa antes de que algo se acabe?
+    let span = targetDays;
+    let bottleneck: Trip["bottleneck"] = null;
+    for (const ingredient of tracked) {
+      const use = daily.get(ingredient.id) ?? 0;
+      const lasts = Math.floor((stock.get(ingredient.id) ?? 0) / use);
+      if (lasts < span) {
+        span = lasts;
+        bottleneck = { name: ingredient.name, date: toKey(addDays(cursor, lasts)) };
+      }
+    }
+    span = Math.max(1, Math.min(span, targetDays));
+
+    trips.push({
+      index,
+      date: toKey(cursor),
+      spanDays: span,
+      cost: items.reduce((sum, i) => sum + i.cost, 0),
       items: items.sort((a, b) => b.cost - a.cost),
+      bottleneck,
     });
+
+    for (const ingredient of tracked) {
+      const use = daily.get(ingredient.id) ?? 0;
+      stock.set(ingredient.id, Math.max(0, (stock.get(ingredient.id) ?? 0) - use * span));
+    }
+    cursor = addDays(cursor, span);
+    index += 1;
   }
 
-  const periods: PurchaseProjection["periods"] = Array.from({ length: months }, (_, index) => {
-    const periodStart = addMonths(start, index);
-    const periodEnd = addMonths(start, index + 1);
-    const periodWeeks = weeks.filter((week) => {
-      const date = parseLocalDate(week.purchaseDate);
-      return date >= periodStart && date < periodEnd;
-    });
-    return {
-      label: `${shortDate(periodStart)} – ${shortDate(addDays(periodEnd, -1))}`,
-      startDate: toDateKey(periodStart),
-      endDate: toDateKey(addDays(periodEnd, -1)),
-      weeks: periodWeeks.length,
-      purchaseDays: periodWeeks.filter((week) => week.cost > 0).length,
-      cost: periodWeeks.reduce((sum, week) => sum + week.cost, 0),
-    };
-  });
-  const totalCost = weeks.reduce((sum, week) => sum + week.cost, 0);
+  const totalCost = trips.reduce((s, t) => s + t.cost, 0);
+  const spanTotal = daysBetween(startDate, toKey(end));
   return {
     startDate,
-    endDate: toDateKey(addDays(end, -1)),
-    weeks,
-    periods,
+    endDate: toKey(addDays(end, -1)),
+    trips,
     totalCost,
-    firstPurchaseCost: weeks[0]?.cost ?? 0,
-    averageWeeklyCost: round(totalCost / Math.max(weeks.length, 1)),
-    averageMonthlyCost: round(totalCost / Math.max(months, 1)),
+    dailyCost: round(totalCost / Math.max(spanTotal, 1)),
+    averageTripCost: round(totalCost / Math.max(trips.length, 1)),
+    monthlyCost: round(totalCost / Math.max(months, 1)),
   };
+}
+
+/** Compras de feria, agrupadas por su propia cadencia. */
+export function getFeriaPlan(state: MealPrepState, targetDays = 30) {
+  const daily = getDailyUsage(state);
+  const lines = state.ingredients
+    .filter((i) => i.source === "feria" && (daily.get(i.id) ?? 0) > 0)
+    .map((ingredient) => {
+      const use = daily.get(ingredient.id) ?? 0;
+      const horizon = Math.min(targetDays, ingredient.shelfLifeDays);
+      const best = pickFormat(ingredient, use * horizon, "value", use);
+      return {
+        ingredientId: ingredient.id,
+        name: ingredient.name,
+        unit: ingredient.unit,
+        perCycle: round(use * horizon, ingredient.unit === "unidad" ? 0 : 0),
+        cost: best?.cost ?? 0,
+        formatLabel: best?.format.label ?? "",
+        packages: best?.packages ?? 0,
+      };
+    })
+    .sort((a, b) => b.cost - a.cost);
+  return { lines, cost: lines.reduce((s, l) => s + l.cost, 0), cycleDays: targetDays };
+}
+
+export const formatCLP = (value: number) =>
+  `$${Math.round(value).toLocaleString("es-CL")}`;
+
+// ---------- peso ----------
+
+/** Mifflin-St Jeor. Es la ecuación con menor error medio en población general. */
+export function bmr(profile: Profile, weightKg: number): number {
+  const base = 10 * weightKg + 6.25 * profile.heightCm - 5 * profile.age;
+  return profile.sex === "m" ? base + 5 : base - 161;
+}
+
+export function tdee(profile: Profile, weightKg: number): number {
+  return bmr(profile, weightKg) * profile.activity;
+}
+
+export const ACTIVITY_LEVELS = [
+  { value: 1.2,   label: "Sedentario",   hint: "escritorio, sin ejercicio" },
+  { value: 1.375, label: "Ligero",       hint: "1-3 días de ejercicio" },
+  { value: 1.55,  label: "Moderado",     hint: "3-5 días de ejercicio" },
+  { value: 1.725, label: "Alto",         hint: "6-7 días de ejercicio" },
+  { value: 1.9,   label: "Muy alto",     hint: "trabajo físico + entreno" },
+] as const;
+
+/** ~7.700 kcal por kilo de tejido. Es una aproximación, no una ley. */
+const KCAL_PER_KG = 7700;
+
+/**
+ * Proyecta el peso semana a semana. Recalcula el gasto con el peso nuevo en cada
+ * paso: si sólo se extrapolara el superávit inicial, la curva se dispararía —
+ * al engordar el cuerpo gasta más y la ganancia se frena sola.
+ */
+export function getWeightProjection(
+  state: MealPrepState,
+  startDate: string,
+  months = 11,
+): WeightProjection | null {
+  const { profile, weightLog } = state;
+  if (!profile || weightLog.length === 0) return null;
+
+  const sorted = [...weightLog].sort((a, b) => a.date.localeCompare(b.date));
+  const first = sorted[0];
+  const logByDate = new Map(sorted.map((w) => [w.date, w.kg]));
+
+  const intake = getDailyTotals(state, 0).calories;
+  const start = parseDate(first.date < startDate ? first.date : startDate);
+  const end = addMonths(parseDate(startDate), months);
+
+  let weight = first.kg;
+  const tdeeStart = tdee(profile, weight);
+  const surplusStart = intake - tdeeStart;
+
+  const points: WeightPoint[] = [];
+  for (let cursor = start; cursor <= end; cursor = addDays(cursor, 7)) {
+    const key = toKey(cursor);
+    points.push({
+      date: key,
+      projected: round(weight, 2),
+      actual: logByDate.get(key),
+    });
+    const surplus = intake - tdee(profile, weight);
+    weight += (surplus * 7) / KCAL_PER_KG;
+  }
+
+  // Los pesajes que no caen justo en un punto semanal no deben perderse.
+  for (const entry of sorted) {
+    if (points.some((p) => p.date === entry.date)) continue;
+    const nearest = points.reduce((best, p) =>
+      Math.abs(daysBetween(p.date, entry.date)) < Math.abs(daysBetween(best.date, entry.date)) ? p : best);
+    nearest.actual = entry.kg;
+  }
+
+  const last = sorted[sorted.length - 1];
+  const atLast = points.reduce((best, p) =>
+    Math.abs(daysBetween(p.date, last.date)) < Math.abs(daysBetween(best.date, last.date)) ? p : best);
+
+  const tdeeEnd = tdee(profile, weight);
+  return {
+    tdeeStart: round(tdeeStart),
+    tdeeEnd: round(tdeeEnd),
+    intake,
+    surplusStart: round(surplusStart),
+    surplusEnd: round(intake - tdeeEnd),
+    startWeight: round(first.kg, 1),
+    endWeight: round(weight, 1),
+    weeklyRateStart: round((surplusStart * 7) / KCAL_PER_KG, 2),
+    points,
+    drift: sorted.length > 1 ? round(last.kg - atLast.projected, 1) : null,
+  };
+}
+
+export function todayKey(): string {
+  return toKey(new Date());
+}
+
+// ---------- medidas ----------
+
+export const MEASUREMENT_SITES: { id: MeasurementSite; label: string; hint: string }[] = [
+  { id: "cuello",  label: "Cuello",  hint: "bajo la nuez" },
+  { id: "pecho",   label: "Pecho",   hint: "a la altura de los pezones" },
+  { id: "brazo",   label: "Brazo",   hint: "bíceps contraído" },
+  { id: "cintura", label: "Cintura", hint: "a la altura del ombligo" },
+  { id: "cadera",  label: "Cadera",  hint: "por la parte más ancha" },
+  { id: "muslo",   label: "Muslo",   hint: "un palmo bajo la ingle" },
+];
+
+export function getMeasurementTrends(state: MealPrepState): MeasurementTrend[] {
+  const log = [...state.measurementLog].sort((a, b) => a.date.localeCompare(b.date));
+  if (log.length === 0) return [];
+  const out: MeasurementTrend[] = [];
+  for (const site of MEASUREMENT_SITES) {
+    const withValue = log.filter((e) => typeof e.values[site.id] === "number");
+    if (withValue.length === 0) continue;
+    const firstEntry = withValue[0];
+    const lastEntry = withValue[withValue.length - 1];
+    const first = firstEntry.values[site.id]!;
+    const last = lastEntry.values[site.id]!;
+    out.push({
+      site: site.id, label: site.label,
+      first, firstDate: firstEntry.date,
+      last, delta: round(last - first, 1), lastDate: lastEntry.date,
+    });
+  }
+  return out;
+}
+
+/**
+ * Lee el conjunto peso + cintura. Es la señal que de verdad importa en un
+ * superávit: subir de peso sin que la cintura se mueva es masa magra; si la
+ * cintura sube más rápido que el peso, es grasa.
+ */
+export function readComposition(state: MealPrepState): string | null {
+  const weights = [...state.weightLog].sort((a, b) => a.date.localeCompare(b.date));
+  const waist = getMeasurementTrends(state).find((t) => t.site === "cintura");
+  if (weights.length < 2 || !waist) return null;
+
+  const kg = round(weights[weights.length - 1].kg - weights[0].kg, 1);
+  if (Math.abs(kg) < 0.5) return null;
+
+  // ~1 cm de cintura por cada 1,5 kg es la referencia de una ganancia limpia.
+  const expected = kg / 1.5;
+  if (kg > 0 && waist.delta <= expected * 0.5) {
+    return `Subiste ${kg} kg y la cintura sólo ${waist.delta} cm: buena parte de eso es masa magra.`;
+  }
+  if (kg > 0 && waist.delta > expected * 1.5) {
+    return `Subiste ${kg} kg y la cintura ${waist.delta} cm: la ganancia está siendo más grasa que músculo. Vale la pena bajar el superávit o sumar entrenamiento de fuerza.`;
+  }
+  return `Subiste ${kg} kg y ${waist.delta} cm de cintura: proporción normal para un superávit de este tamaño.`;
 }

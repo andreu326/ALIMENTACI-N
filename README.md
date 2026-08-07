@@ -1,40 +1,119 @@
-# MealPrep Planner
+# MealPrep
 
-Aplicación web para planificar comidas, macronutrientes y gastos de alimentación. Conecta recetas, cantidades, formatos reales de supermercado y un calendario de reposición para estimar el dinero que sale de caja.
+Plan de comidas, macros y viajes a Central Mayorista. El objetivo no es sólo
+gastar menos: es **ir al supermercado la menor cantidad de veces posible** sin
+salirse del presupuesto ni de los macros.
 
-## Funcionalidades
+## Qué resuelve
 
-- Plan semanal con desayuno, almuerzo, cena y café separados.
-- Cálculo automático de calorías, proteínas, carbohidratos y grasas.
-- Biblioteca editable de ingredientes, precios y formatos de compra.
-- Costos por porción, semana y mes.
-- Calendario de compras desde el viernes 7 de agosto de 2026.
-- Proyección de caja durante 11 meses considerando sobrantes y reposiciones.
-- Persistencia local en el navegador.
-- Diseño responsive para escritorio y móvil.
+Con la canasta original eran 48 viajes en 11 meses y $2.764.530. Con los precios
+y formatos actuales son **12 viajes y $1.265.350**, más la feria aparte.
 
-## Ejecutar localmente
+La diferencia sale de tres cosas:
+
+1. **Precios reales.** Los precios del catálogo de centralmayorista.cl están
+   verificados producto por producto (7-ago-2026).
+2. **Mínimos de compra.** 344 de 605 SKU revisados exigen llevar más de un pack.
+   Ignorarlo desviaba el presupuesto hasta en 3× en algunos productos.
+3. **Vida útil.** La cadencia de viajes no la fija el dinero, la fija el primer
+   ingrediente que se echa a perder.
+
+## Modelo
+
+- `data/seed.ts` — ingredientes con precio, formatos, `minQty`, `shelfLifeDays`
+  y `source` (`mayorista` / `feria` / `aparte`). Sólo `mayorista` genera viajes.
+- `utils/mealprep-calculations.ts` — macros, elección de formato y simulación de
+  viajes.
+- `types/mealprep.ts` — tipos del dominio.
+
+### Estrategia de formato
+
+`pickFormat` acepta dos criterios:
+
+- `value` (por defecto) — minimiza el **precio por unidad**. Correcto en régimen,
+  porque el horizonte de compra ya viene recortado por la vida útil y el sobrante
+  nunca se pierde.
+- `cash` — minimiza el **desembolso del día**. Sirve cuando la restricción es la
+  caja de ese viernes y no el costo total.
+
+## Bitácora
+
+El plan es una proyección; la app compara esa proyección con lo que realmente
+pasa.
+
+- **Viajes** — cada uno se marca `pendiente` / `hecho` / `saltado`. Al marcarlo
+  como hecho guarda lo efectivamente marcado en la lista, así se ve el desvío
+  acumulado contra el plan.
+- **Peso** — pesajes fechados en `weightLog`. La proyección se dibuja punteada
+  y encima va la curva real.
+
+### Proyección de peso
+
+Mifflin-St Jeor para el metabolismo basal, por multiplicador de actividad para
+el gasto total, y ~7.700 kcal por kilo de tejido.
+
+El gasto **se recalcula cada semana con el peso nuevo**. Extrapolar el superávit
+inicial de forma lineal sobreestima la ganancia bastante: al engordar el cuerpo
+gasta más y la curva se aplana sola. Con un superávit inicial de +417 kcal la
+regla lineal da +18,2 kg en 11 meses; el modelo iterativo da +13,8.
+
+Es una estimación, no una promesa. Por eso la app pide registrar el peso y
+muestra el desvío entre lo proyectado y lo real.
+
+## Interfaz
+
+Tres pantallas más el detalle de viaje y el perfil, mobile-first para iPhone 14 Pro:
+
+- **Hoy** — tira de días, anillos de macros, evolución de peso, comidas del día
+  con ilustraciones, y la próxima compra.
+- **Viajes** — calendario mensual con el estado de cada viaje, o vista de lista,
+  más el desglose de feria.
+- **Despensa** — precios por kilo, formatos y mínimos de compra.
+
+El sistema visual está en `app/globals.css` y los principios en `.impeccable.md`:
+oscuro monocromático, acabado mate, jerarquía sólo por luminosidad.
+
+## Protección
+
+La app está publicada en Vercel y el acceso pasa por `middleware.ts`, que corre en
+el Edge **antes de servir el HTML**: sin cookie de sesión válida el navegador no
+recibe la página. No es una cortina de JavaScript.
+
+Vercel sólo ofrece protección con contraseña en Enterprise o con el add-on de
+$150/mes en Pro, así que esto la reemplaza sin costo.
+
+Hay que definir dos variables de entorno en Vercel (Project Settings →
+Environment Variables) y volver a desplegar:
+
+| variable | qué es |
+|---|---|
+| `APP_PASSWORD` | la clave con la que entras |
+| `AUTH_SECRET` | secreto para firmar la cookie: `openssl rand -base64 32` |
+
+Sin ellas la app **queda abierta a propósito**, para que funcione en local sin
+configurar nada. La pantalla de entrada avisa cuando ese es el caso.
+
+La cookie es `httpOnly`, `sameSite=lax`, `secure` en producción, firmada con
+HMAC-SHA256 y con un mes de vigencia. El endpoint de entrada corta a los 8
+intentos fallidos por IP durante 10 minutos.
+
+## Ejecutar
 
 ```bash
-npm install
-npm run dev
+cp .env.example .env.local   # y completa las dos variables
+npm install && npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000).
-
-## Verificación
+## Verificar
 
 ```bash
-npx tsc --noEmit
-npm run build
+npx tsc --noEmit && npm run build
 ```
 
-## Estructura
+## Advertencias
 
-- `app/`: página principal y estilos.
-- `components/`: dashboard, planificador, recetas, ingredientes y compras.
-- `data/seed.ts`: plan de alimentación inicial.
-- `utils/mealprep-calculations.ts`: macros, costos y proyección de compras.
-- `database/schema.sql`: esquema inicial opcional para Supabase.
-
-Los precios son estimaciones ingresadas manualmente y pueden cambiar según supermercado, ubicación y promociones.
+- Los precios son del catálogo online y pueden variar en sala. Papas, cebolla y
+  ajo van a la feria y no tienen precio verificado.
+- Central Mayorista exige membresía de comerciante.
+- La receta de cena arrastra 9 g de sal al día desde la versión original, sobre
+  el límite de la OMS. Está anotado en el ingrediente.
