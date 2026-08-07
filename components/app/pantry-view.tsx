@@ -5,6 +5,7 @@ import { useMealPrep } from "@/components/providers/mealprep-provider";
 import type { SupplySource } from "@/types/mealprep";
 import { durationLabel } from "@/components/app/bits";
 import { formatCLP, getDailyUsage } from "@/utils/mealprep-calculations";
+import { Backup } from "@/components/app/backup";
 
 const TABS: { id: SupplySource; label: string }[] = [
   { id: "mayorista", label: "Mayorista" },
@@ -133,8 +134,12 @@ export function PantryView() {
         )}
       </section>
 
+      <div style={{ ["--i" as string]: 2 }}>
+        <Backup />
+      </div>
+
       {source === "mayorista" ? (
-        <p className="note" style={{ ["--i" as string]: 2 }}>
+        <p className="note" style={{ ["--i" as string]: 3 }}>
           Central Mayorista exige un mínimo de packs en <strong>344 de 605</strong> productos que
           revisé. Cuando aparece la marca de mínimo, el precio de la izquierda es el del pack y el
           de la derecha es lo que realmente pagas en caja.

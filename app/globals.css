@@ -935,3 +935,5 @@ ul, ol { padding: 0; list-style: none; }
 .cadence { padding-top: var(--sp-xs); }
 .choice-side { font-size: var(--text-md); font-weight: 500; color: var(--c7); flex-shrink: 0; }
 .choice[aria-selected="true"] .choice-side { color: var(--c8); }
+
+.backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-xs); }

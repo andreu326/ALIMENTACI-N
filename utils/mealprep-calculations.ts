@@ -240,6 +240,10 @@ export function getTripPlan(
   let guard = 0;
 
   while (cursor < end && guard < 400) {
+    // Si el viaje ya se hizo en otra fecha, el calendario se reancla ahí. Sin
+    // esto, comprar el sábado en vez del viernes desfasa los once meses.
+    const doneDate = state.tripLog[index]?.doneDate;
+    if (doneDate) cursor = parseDate(doneDate);
     guard += 1;
     const items: TripItem[] = [];
     const isFirst = index === 1 && firstTrip !== undefined;

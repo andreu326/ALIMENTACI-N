@@ -127,6 +127,7 @@ export function MealPrepProvider({ children }: { children: React.ReactNode }) {
     }),
     toggleShopping: (ingredientId: string) => setState((current) => ({ ...current, checkedShoppingIds: current.checkedShoppingIds.includes(ingredientId) ? current.checkedShoppingIds.filter((id) => id !== ingredientId) : [...current.checkedShoppingIds, ingredientId] })),
     resetData: () => setState(cloneSeed()),
+    replaceState: (next: MealPrepState) => setState(next),
   }), []);
 
   const value = useMemo<MealPrepContextValue>(() => ({ state, actions, meta: { hydrated, storageAvailable } }), [actions, hydrated, state, storageAvailable]);

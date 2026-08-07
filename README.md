@@ -137,6 +137,19 @@ La cookie es `httpOnly`, `sameSite=lax`, `secure` en producción, firmada con
 HMAC-SHA256 y con un mes de vigencia. El endpoint de entrada corta a los 8
 intentos fallidos por IP durante 10 minutos.
 
+## Riesgos conocidos
+
+- **Los datos viven sólo en el navegador.** No hay servidor ni sincronización.
+  Safari borra el almacenamiento de sitios que no se visitan por siete días, así
+  que la exportación en Despensa → Respaldo no es opcional: es la única copia.
+- **La clave es de cuatro dígitos.** Diez mil combinaciones. El limitador corta a
+  los 8 intentos por IP, pero vive en memoria de la función Edge y se reinicia.
+- **El plan sólo se edita en el código.** Recetas, cantidades e ingredientes se
+  cambian en `data/seed.ts`. Desde la app sólo se corrigen precios y porciones.
+- **`PLAN_START` está fijo** en `data/seed.ts`. El calendario se reancla cuando
+  se marca un viaje como hecho en otra fecha, pero el arranque sigue siendo esa
+  constante.
+
 ## Ejecutar
 
 ```bash

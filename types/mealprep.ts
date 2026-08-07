@@ -287,6 +287,7 @@ export type MealPrepActions = {
   duplicateMeal: (id: string, targetDay: number) => void;
   toggleShopping: (ingredientId: string) => void;
   resetData: () => void;
+  replaceState: (state: MealPrepState) => void;
 };
 
 export type MealPrepContextValue = {
