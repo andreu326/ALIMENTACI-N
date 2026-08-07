@@ -341,7 +341,7 @@ const recipes: Recipe[] = [
 ];
 
 export const seedState: MealPrepState = {
-  version: 5,
+  version: 6,
   targets: { calories: 2700, protein: 140, carbs: 360, fat: 65, weeklyBudget: 30000 },
   ingredients,
   recipes,
@@ -355,6 +355,8 @@ export const seedState: MealPrepState = {
   profile: null,
   weightLog: [],
   measurementLog: [],
+  dayLog: {},
+  priceOverrides: {},
   tripLog: {},
 };
 

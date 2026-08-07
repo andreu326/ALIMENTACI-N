@@ -1,6 +1,7 @@
 import type {
   Ingredient, MealPrepState, Profile, PurchaseFormat, Recipe, RecipeTotals,
-  MeasurementSite, MeasurementTrend, ShoppingLine, Trip, TripItem, TripPlan,
+  ConsumedTotals, MeasurementSite, MeasurementTrend, PortionSuggestion,
+  ShoppingLine, Trip, TripItem, TripPlan,
   WeightPoint, WeightProjection,
 } from "@/types/mealprep";
 
@@ -98,7 +99,7 @@ export function getDailyTotals(state: MealPrepState, day: number): RecipeTotals 
     if (meal.day !== day) continue;
     const recipe = recipes.get(meal.recipeId);
     if (!recipe || recipe.servings <= 0) continue;
-    const t = getRecipeTotals(recipe, state.ingredients);
+    const t = getRecipeTotals(recipe, resolvedIngredients(state));
     const factor = meal.servings / recipe.servings;
     totals.calories += t.calories * factor;
     totals.protein += t.protein * factor;
@@ -145,7 +146,7 @@ export function getDailyUsage(state: MealPrepState): Map<string, number> {
 export function getShoppingList(state: MealPrepState): ShoppingLine[] {
   const daily = getDailyUsage(state);
   const result: ShoppingLine[] = [];
-  for (const ingredient of state.ingredients) {
+  for (const ingredient of resolvedIngredients(state)) {
     const weekly = (daily.get(ingredient.id) ?? 0) * 7;
     if (weekly <= 0 || ingredient.formats.length === 0) continue;
     const best = pickFormat(ingredient, weekly, "value", daily.get(ingredient.id));
@@ -223,7 +224,7 @@ export function getTripPlan(
   strategy: FormatStrategy = "value",
 ): TripPlan {
   const daily = getDailyUsage(state);
-  const tracked = state.ingredients.filter(
+  const tracked = resolvedIngredients(state).filter(
     (i) => i.source === "mayorista" && (daily.get(i.id) ?? 0) > 0 && i.formats.length > 0,
   );
 
@@ -255,6 +256,7 @@ export function getTripPlan(
         ingredientId: ingredient.id,
         name: ingredient.name,
         packages: best.packages,
+        formatId: best.format.id,
         formatLabel: best.format.label,
         cost: best.cost,
         coversDays: Math.floor(after / use),
@@ -308,7 +310,7 @@ export function getTripPlan(
 /** Compras de feria, agrupadas por su propia cadencia. */
 export function getFeriaPlan(state: MealPrepState, targetDays = 30) {
   const daily = getDailyUsage(state);
-  const lines = state.ingredients
+  const lines = resolvedIngredients(state)
     .filter((i) => i.source === "feria" && (daily.get(i.id) ?? 0) > 0)
     .map((ingredient) => {
       const use = daily.get(ingredient.id) ?? 0;
@@ -475,4 +477,118 @@ export function readComposition(state: MealPrepState): string | null {
     return `Subiste ${kg} kg y la cintura ${waist.delta} cm: la ganancia está siendo más grasa que músculo. Vale la pena bajar el superávit o sumar entrenamiento de fuerza.`;
   }
   return `Subiste ${kg} kg y ${waist.delta} cm de cintura: proporción normal para un superávit de este tamaño.`;
+}
+
+// ---------- precios corregidos en tienda ----------
+
+/** Aplica los precios reales registrados en caja sobre el catálogo. */
+export function resolvedIngredients(state: MealPrepState): Ingredient[] {
+  const overrides = state.priceOverrides;
+  if (!overrides || Object.keys(overrides).length === 0) return state.ingredients;
+  return state.ingredients.map((ingredient) => ({
+    ...ingredient,
+    formats: ingredient.formats.map((format) =>
+      overrides[format.id] !== undefined ? { ...format, price: overrides[format.id] } : format),
+  }));
+}
+
+// ---------- consumo del día ----------
+
+const EMPTY: RecipeTotals = { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 };
+
+/**
+ * Lo que realmente se comió un día, contra lo que estaba planificado.
+ * Sin registro se asume que no ha comido nada todavía, no que cumplió el plan:
+ * el objetivo es que el número refleje la realidad, no que se vea bonito.
+ */
+export function getConsumed(state: MealPrepState, dayIndex: number, dateKey: string): ConsumedTotals {
+  const ingredients = resolvedIngredients(state);
+  const recipes = new Map(state.recipes.map((r) => [r.id, r]));
+  const log = state.dayLog[dateKey];
+  const meals = state.plannedMeals.filter((m) => m.day === dayIndex);
+
+  const totals = { ...EMPTY };
+  const planned = { ...EMPTY };
+
+  for (const meal of meals) {
+    const recipe = recipes.get(meal.recipeId);
+    if (!recipe || recipe.servings <= 0) continue;
+    const t = getRecipeTotals(recipe, ingredients);
+    const factor = meal.servings / recipe.servings;
+    planned.calories += t.calories * factor;
+    planned.protein += t.protein * factor;
+    planned.carbs += t.carbs * factor;
+    planned.fat += t.fat * factor;
+    planned.cost += t.cost * factor;
+
+    if (log?.eaten.includes(meal.id)) {
+      totals.calories += t.calories * factor;
+      totals.protein += t.protein * factor;
+      totals.carbs += t.carbs * factor;
+      totals.fat += t.fat * factor;
+      totals.cost += t.cost * factor;
+    }
+  }
+
+  for (const extra of log?.extras ?? []) {
+    totals.calories += extra.calories;
+    totals.protein += extra.protein;
+    totals.carbs += extra.carbs;
+    totals.fat += extra.fat;
+  }
+
+  const round1 = (t: RecipeTotals): RecipeTotals => ({
+    calories: round(t.calories), protein: round(t.protein, 1),
+    carbs: round(t.carbs, 1), fat: round(t.fat, 1), cost: round(t.cost),
+  });
+  return { ...round1(totals), planned: round1(planned) };
+}
+
+// ---------- sugerencia de porciones ----------
+
+/**
+ * Compara el ritmo real de los pesajes con un rango sano de ganancia
+ * (0,25-0,5 % del peso corporal por semana) y propone un ajuste.
+ *
+ * Devuelve null si no hay datos suficientes. Es una sugerencia: la decide el
+ * usuario, la app no toca las porciones sola.
+ */
+export function getPortionSuggestion(state: MealPrepState): PortionSuggestion | null {
+  const log = [...state.weightLog].sort((a, b) => a.date.localeCompare(b.date));
+  if (log.length < 2) return null;
+
+  const first = log[0];
+  const last = log[log.length - 1];
+  const days = daysBetween(first.date, last.date);
+  if (days < 14) return null; // menos de dos semanas es ruido de agua y sal
+
+  const observedRate = round(((last.kg - first.kg) / days) * 7, 2);
+  const targetLow = round(last.kg * 0.0025, 2);
+  const targetHigh = round(last.kg * 0.005, 2);
+
+  let gap = 0;
+  let reason = "";
+  if (observedRate > targetHigh) {
+    gap = targetHigh - observedRate;
+    reason = `Vas subiendo ${observedRate} kg por semana y el rango sano para tus ${last.kg} kg es ${targetLow}–${targetHigh}. A este ritmo buena parte va a ser grasa.`;
+  } else if (observedRate < targetLow) {
+    gap = targetLow - observedRate;
+    reason = observedRate < 0
+      ? `Estás bajando ${Math.abs(observedRate)} kg por semana en vez de subir. El superávit no está alcanzando.`
+      : `Vas subiendo ${observedRate} kg por semana y el mínimo del rango sano es ${targetLow}. Vas más lento de lo necesario.`;
+  } else {
+    return null; // dentro del rango: no hay nada que sugerir
+  }
+
+  const deltaCalories = Math.round((gap * 7700) / 7);
+  if (Math.abs(deltaCalories) < 60) return null; // ajustar por menos no vale la pena
+
+  // Se reparte entre arroz y pollo, que son las palancas más baratas del plan.
+  const halves = deltaCalories / 2;
+  return {
+    observedRate, targetLow, targetHigh, deltaCalories,
+    riceGrams: Math.round(halves / 3.25 / 5) * 5,   // 325 kcal por 100 g
+    chickenGrams: Math.round(halves / 1.33 / 5) * 5, // 133 kcal por 100 g
+    reason,
+  };
 }

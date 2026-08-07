@@ -44,8 +44,21 @@ pasa.
 - **Viajes** — cada uno se marca `pendiente` / `hecho` / `saltado`. Al marcarlo
   como hecho guarda lo efectivamente marcado en la lista, así se ve el desvío
   acumulado contra el plan.
-- **Peso** — pesajes fechados en `weightLog`. La proyección se dibuja punteada
-  y encima va la curva real.
+- **Peso y medidas** — pesajes y circunferencias fechados. La proyección se
+  dibuja punteada y encima va la curva real.
+- **Comidas** — cada comida del plan se marca como comida, y lo que se come
+  fuera del plan se agrega aparte. Los anillos muestran lo **consumido**, no lo
+  planificado: parten en cero cada día y suben al registrar.
+- **Precios** — al marcar un ítem se puede corregir lo que costó en caja. El
+  plan completo se recalcula con ese precio.
+
+### Sugerencia de porciones
+
+Compara el ritmo real de los pesajes con un rango sano de ganancia (0,25-0,5 %
+del peso corporal por semana) y propone sumar o restar gramos de arroz y pollo.
+
+**Nunca se aplica sola.** Muestra el número, el porqué, y el usuario decide.
+Necesita al menos dos semanas de pesajes para no reaccionar a ruido de agua y sal.
 
 ### Proyección de peso
 
@@ -90,8 +103,11 @@ Environment Variables) y volver a desplegar:
 | `APP_PASSWORD` | la clave con la que entras |
 | `AUTH_SECRET` | secreto para firmar la cookie: `openssl rand -base64 32` |
 
-Sin ellas la app **queda abierta a propósito**, para que funcione en local sin
-configurar nada. La pantalla de entrada avisa cuando ese es el caso.
+Sin ellas la app **se cierra en producción** y la pantalla de entrada explica qué
+falta. En desarrollo sí deja pasar, para no exigir configuración local.
+
+Antes fallaba abierta y el resultado fue un sitio público en Vercel que parecía
+protegido. Un portón que se abre solo cuando está mal configurado no es un portón.
 
 La cookie es `httpOnly`, `sameSite=lax`, `secure` en producción, firmada con
 HMAC-SHA256 y con un mes de vigencia. El endpoint de entrada corta a los 8

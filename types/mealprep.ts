@@ -107,6 +107,39 @@ export type MeasurementTrend = {
   lastDate: string;
 };
 
+/** Algo que se comió fuera del plan. */
+export type ExtraFood = {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+/** Lo que realmente se comió un día. */
+export type DayLog = {
+  /** Ids de `plannedMeals` marcados como comidos. */
+  eaten: string[];
+  extras: ExtraFood[];
+};
+
+export type ConsumedTotals = RecipeTotals & { planned: RecipeTotals };
+
+export type PortionSuggestion = {
+  /** kg por semana observados en los últimos pesajes. */
+  observedRate: number;
+  /** Rango sano para su peso: 0,25-0,5 % del peso corporal por semana. */
+  targetLow: number;
+  targetHigh: number;
+  /** kcal diarias que habría que sumar (+) o restar (-). */
+  deltaCalories: number;
+  /** Traducción a gramos, para que sea accionable. */
+  riceGrams: number;
+  chickenGrams: number;
+  reason: string;
+};
+
 export type TripStatus = "pendiente" | "hecho" | "saltado";
 
 export type TripLogEntry = {
@@ -118,7 +151,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 5;
+  version: 6;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];
@@ -128,6 +161,10 @@ export type MealPrepState = {
   profile: Profile | null;
   weightLog: WeightEntry[];
   measurementLog: MeasurementEntry[];
+  /** Indexado por fecha YYYY-MM-DD. */
+  dayLog: Record<string, DayLog>;
+  /** Precio corregido en tienda, por id de formato. */
+  priceOverrides: Record<string, number>;
   /** Indexado por número de viaje. */
   tripLog: Record<number, TripLogEntry>;
 };
@@ -186,6 +223,7 @@ export type TripItem = {
   ingredientId: string;
   name: string;
   packages: number;
+  formatId: string;
   formatLabel: string;
   cost: number;
   /** Días que alcanza el stock tras esta compra. */
@@ -220,6 +258,11 @@ export type MealPrepActions = {
   logWeight: (date: string, kg: number) => void;
   removeWeight: (date: string) => void;
   logMeasurements: (date: string, values: MeasurementEntry["values"]) => void;
+  toggleEaten: (date: string, mealId: string) => void;
+  addExtra: (date: string, extra: Omit<ExtraFood, "id">) => void;
+  removeExtra: (date: string, id: string) => void;
+  setPriceOverride: (formatId: string, price: number | null) => void;
+  scalePortions: (factorByIngredient: Record<string, number>) => void;
   setTripStatus: (index: number, entry: TripLogEntry | null) => void;
   saveIngredient: (ingredient: Ingredient) => void;
   deleteIngredient: (id: string) => void;

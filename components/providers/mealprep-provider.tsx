@@ -2,9 +2,9 @@
 
 import { createContext, use, useEffect, useMemo, useState } from "react";
 import { seedState } from "@/data/seed";
-import type { Ingredient, MealPrepContextValue, MealPrepState, NutritionTargets, PlannedMeal, MeasurementEntry, Profile, Recipe, TripLogEntry } from "@/types/mealprep";
+import type { Ingredient, MealPrepContextValue, MealPrepState, NutritionTargets, PlannedMeal, DayLog, ExtraFood, MeasurementEntry, Profile, Recipe, TripLogEntry } from "@/types/mealprep";
 
-const STORAGE_KEY = "mealprep-planner:v5";
+const STORAGE_KEY = "mealprep-planner:v6";
 const MealPrepContext = createContext<MealPrepContextValue | null>(null);
 
 function cloneSeed(): MealPrepState {
@@ -16,7 +16,7 @@ function loadState(): { state: MealPrepState; storageAvailable: boolean } {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return { state: cloneSeed(), storageAvailable: true };
     const parsed = JSON.parse(stored) as MealPrepState;
-    if (parsed.version !== 5 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
+    if (parsed.version !== 6 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
     return { state: parsed, storageAvailable: true };
   } catch {
     return { state: cloneSeed(), storageAvailable: false };
@@ -66,6 +66,38 @@ export function MealPrepProvider({ children }: { children: React.ReactNode }) {
           .sort((a, b) => a.date.localeCompare(b.date)),
       };
     }),
+    toggleEaten: (date: string, mealId: string) => setState((current) => {
+      const day: DayLog = current.dayLog[date] ?? { eaten: [], extras: [] };
+      const eaten = day.eaten.includes(mealId)
+        ? day.eaten.filter((id) => id !== mealId)
+        : [...day.eaten, mealId];
+      return { ...current, dayLog: { ...current.dayLog, [date]: { ...day, eaten } } };
+    }),
+    addExtra: (date: string, extra: Omit<ExtraFood, "id">) => setState((current) => {
+      const day: DayLog = current.dayLog[date] ?? { eaten: [], extras: [] };
+      const withId: ExtraFood = { ...extra, id: crypto.randomUUID() };
+      return { ...current, dayLog: { ...current.dayLog, [date]: { ...day, extras: [...day.extras, withId] } } };
+    }),
+    removeExtra: (date: string, id: string) => setState((current) => {
+      const day = current.dayLog[date];
+      if (!day) return current;
+      return { ...current, dayLog: { ...current.dayLog, [date]: { ...day, extras: day.extras.filter((e) => e.id !== id) } } };
+    }),
+    setPriceOverride: (formatId: string, price: number | null) => setState((current) => {
+      const priceOverrides = { ...current.priceOverrides };
+      if (price === null) delete priceOverrides[formatId]; else priceOverrides[formatId] = price;
+      return { ...current, priceOverrides };
+    }),
+    scalePortions: (factorByIngredient: Record<string, number>) => setState((current) => ({
+      ...current,
+      recipes: current.recipes.map((recipe) => ({
+        ...recipe,
+        ingredients: recipe.ingredients.map((line) => {
+          const factor = factorByIngredient[line.ingredientId];
+          return factor ? { ...line, quantity: Math.round(line.quantity * factor) } : line;
+        }),
+      })),
+    })),
     setTripStatus: (index: number, entry: TripLogEntry | null) => setState((current) => {
       const tripLog = { ...current.tripLog };
       if (entry) tripLog[index] = entry; else delete tripLog[index];

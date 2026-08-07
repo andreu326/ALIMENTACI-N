@@ -831,3 +831,101 @@ ul, ol { padding: 0; list-style: none; }
 }
 
 .gate-error { font-size: var(--text-sm); color: var(--c7); margin-top: var(--sp-xs); }
+
+/* ---------- registro de comidas ---------- */
+
+.meal-row { display: grid; grid-template-columns: 34px 1fr; align-items: center; }
+.meal-row[data-eaten="true"] .meal-name { color: var(--c6); }
+.meal-row[data-eaten="true"] .meal-art { opacity: 0.45; }
+
+.meal-tick {
+  display: grid;
+  place-items: center;
+  height: 44px;
+  transition: transform 150ms var(--ease-out);
+}
+.meal-tick:active { transform: scale(0.88); }
+.meal-row[data-eaten="true"] .check-box { background: var(--c8); border-color: var(--c8); }
+.meal-row[data-eaten="true"] .check-box svg { opacity: 1; transform: scale(1); }
+
+.add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  width: 100%;
+  padding: var(--sp-sm) 0;
+  margin-top: var(--sp-xs);
+  border-top: 1px solid var(--edge-soft);
+  font-size: var(--text-sm);
+  color: var(--c6);
+  transition: color 180ms var(--ease-out);
+}
+.add-row span { font-size: 17px; line-height: 1; color: var(--c5); }
+.add-row:active { color: var(--c8); }
+
+.extra-form {
+  display: grid;
+  gap: var(--sp-sm);
+  padding: var(--sp-md) 0;
+  border-top: 1px solid var(--edge-soft);
+}
+.extra-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-xs); }
+.extra-grid .input { padding-inline: var(--sp-xs); text-align: center; }
+.extra-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-xs); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--c7);
+  border: 1px solid var(--c3);
+}
+
+/* ---------- sugerencia ---------- */
+
+.suggest {
+  padding: var(--sp-md);
+  background: var(--c1);
+  border: 1px solid var(--edge-soft);
+  border-radius: var(--r-lg);
+}
+.suggest-lead { font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.025em; }
+.suggest-why { font-size: var(--text-sm); color: var(--c6); line-height: 1.6; margin-top: var(--sp-xs); max-width: 62ch; }
+.suggest-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-xs); margin-top: var(--sp-md); }
+
+/* ---------- lista compartible y precios reales ---------- */
+
+.share {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xs);
+  width: 100%;
+  margin-bottom: var(--sp-xs);
+}
+
+.price-toggle {
+  display: block;
+  width: 100%;
+  padding: 0 var(--sp-xs) var(--sp-sm) 46px;
+  font-size: var(--text-xs);
+  color: var(--c5);
+  text-align: left;
+  transition: color 180ms var(--ease-out);
+}
+.price-toggle:active { color: var(--c8); }
+
+.price-edit {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: 0 var(--sp-xs) var(--sp-sm) 46px;
+}
+.price-edit .input { flex: 1; padding-block: 9px; }
+
+.share-manual { margin-bottom: var(--sp-md); }
+.share-text {
+  width: 100%;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  resize: vertical;
+  font-family: var(--font-chivo-mono), ui-monospace, monospace;
+}

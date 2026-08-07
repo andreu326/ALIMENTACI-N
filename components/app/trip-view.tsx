@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PLAN_START } from "@/data/seed";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
 import { CheckMark, Chevron, Figure, durationLabel } from "@/components/app/bits";
 import { formatCLP, formatDate, getTripPlan, todayKey } from "@/utils/mealprep-calculations";
+import { ShareList } from "@/components/app/share-list";
+import { PriceField } from "@/components/app/price-field";
 import type { TripStatus } from "@/types/mealprep";
 
 const STATUSES: { id: TripStatus; label: string }[] = [
@@ -101,6 +103,7 @@ export function TripView({ index, onBack }: { index: number; onBack: () => void 
           <h2 className="section-title">Lista</h2>
           <span className="section-meta">toca para marcar</span>
         </div>
+        <ShareList trip={trip} />
         <ul className="rows">
           {trip.items.map((item) => {
             const isDone = state.checkedShoppingIds.includes(keyFor(item.ingredientId));
@@ -127,6 +130,7 @@ export function TripView({ index, onBack }: { index: number; onBack: () => void 
                   </span>
                   <span className="check-cost num">{formatCLP(item.cost)}</span>
                 </button>
+                <PriceField item={item} />
               </li>
             );
           })}

@@ -5,7 +5,7 @@ export const metadata = { title: "MealPrep" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; setup?: string }>;
 }) {
   const { next } = await searchParams;
   const configured = Boolean(process.env.APP_PASSWORD && process.env.AUTH_SECRET);

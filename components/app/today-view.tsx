@@ -8,8 +8,11 @@ import { MealArt } from "@/components/app/meal-art";
 import { Chevron } from "@/components/app/bits";
 import { WeightSection } from "@/components/app/weight-view";
 import { MeasurementsSection } from "@/components/app/measurements";
+import { ExtrasEditor } from "@/components/app/extras";
+import { PortionSuggestion } from "@/components/app/suggestion";
+import { CheckMark } from "@/components/app/bits";
 import {
-  daysBetween, formatCLP, formatDate, getDailyTotals, getRecipeTotals, getTripPlan, todayKey,
+  daysBetween, formatCLP, formatDate, getConsumed, getRecipeTotals, getTripPlan, todayKey,
 } from "@/utils/mealprep-calculations";
 
 const LETTERS = ["L", "M", "M", "J", "V", "S", "D"];
@@ -34,7 +37,7 @@ function weekDates(date: Date) {
 }
 
 export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => void; onOpenProfile: () => void }) {
-  const { state } = useMealPrep();
+  const { state, actions } = useMealPrep();
 
   // La semana y el día seleccionado salen de la fecha real, no del inicio del plan.
   const today = useMemo(() => new Date(), []);
@@ -43,7 +46,13 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
 
   const [day, setDay] = useState(todayIndex);
   const [openMeal, setOpenMeal] = useState<string | null>(null);
-  const totals = useMemo(() => getDailyTotals(state, day), [state, day]);
+
+  const dateKey = useMemo(() => {
+    const d = dates[day];
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, [dates, day]);
+  const totals = useMemo(() => getConsumed(state, day, dateKey), [state, day, dateKey]);
+  const dayLog = state.dayLog[dateKey];
   const plan = useMemo(() => getTripPlan(state, PLAN_START, 11, 30), [state]);
   const ingredients = useMemo(
     () => new Map(state.ingredients.map((i) => [i.id, i])),
@@ -93,6 +102,13 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
           fat={totals.fat}
           targets={t}
         />
+        <p className="section-meta" style={{ marginTop: "var(--sp-xs)" }}>
+          {totals.calories === 0
+            ? <>Sin registrar. El plan del día trae <span className="num">{totals.planned.calories}</span> kcal.</>
+            : <>Llevas <span className="num">{totals.calories}</span> de{" "}
+                <span className="num">{t.calories}</span> kcal · faltan{" "}
+                <span className="num">{Math.max(0, t.calories - totals.calories)}</span></>}
+        </p>
       </section>
 
       <div style={{ ["--i" as string]: 3 }}>
@@ -106,7 +122,7 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
       <section className="section" style={{ ["--i" as string]: 5 }}>
         <div className="section-head">
           <h2 className="section-title">Comidas</h2>
-          <span className="section-meta num">{formatCLP(totals.cost)} el día</span>
+          <span className="section-meta num">{formatCLP(totals.planned.cost)} el día</span>
         </div>
 
         <ul>
@@ -118,24 +134,35 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
             const open = openMeal === meal.id;
             return (
               <li key={meal.id}>
-                <button
-                  type="button"
-                  className="meal"
-                  aria-expanded={open}
-                  onClick={() => setOpenMeal(open ? null : meal.id)}
-                >
-                  <MealArt recipeId={recipe.id} />
-                  <span>
-                    <span className="meal-slot">{meal.slot}</span>
-                    <span className="meal-name">{recipe.name}</span>
-                    <span className="meal-macros num">
-                      <b>{Math.round(rt.calories / per)}</b> kcal ·{" "}
-                      <b>{Math.round(rt.protein / per)}</b> P ·{" "}
-                      <b>{Math.round(rt.carbs / per)}</b> C ·{" "}
-                      <b>{Math.round(rt.fat / per)}</b> G
+                <div className="meal-row" data-eaten={dayLog?.eaten.includes(meal.id) ?? false}>
+                  <button
+                    type="button"
+                    className="meal-tick"
+                    aria-pressed={dayLog?.eaten.includes(meal.id) ?? false}
+                    aria-label={`Marcar ${recipe.name} como comido`}
+                    onClick={() => actions.toggleEaten(dateKey, meal.id)}
+                  >
+                    <span className="check-box"><CheckMark /></span>
+                  </button>
+                  <button
+                    type="button"
+                    className="meal"
+                    aria-expanded={open}
+                    onClick={() => setOpenMeal(open ? null : meal.id)}
+                  >
+                    <MealArt recipeId={recipe.id} />
+                    <span>
+                      <span className="meal-slot">{meal.slot}</span>
+                      <span className="meal-name">{recipe.name}</span>
+                      <span className="meal-macros num">
+                        <b>{Math.round(rt.calories / per)}</b> kcal ·{" "}
+                        <b>{Math.round(rt.protein / per)}</b> P ·{" "}
+                        <b>{Math.round(rt.carbs / per)}</b> C ·{" "}
+                        <b>{Math.round(rt.fat / per)}</b> G
+                      </span>
                     </span>
-                  </span>
-                </button>
+                  </button>
+                </div>
 
                 <div className="reveal" data-open={open}>
                   <div>
@@ -161,7 +188,13 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
             );
           })}
         </ul>
+
+        <ExtrasEditor dateKey={dateKey} extras={dayLog?.extras ?? []} />
       </section>
+
+      <div style={{ ["--i" as string]: 5 }}>
+        <PortionSuggestion />
+      </div>
 
       {next ? (
         <section className="section" style={{ ["--i" as string]: 6 }}>

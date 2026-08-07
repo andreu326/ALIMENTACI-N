@@ -57,7 +57,7 @@ export function LoginForm({ next, configured }: { next: string; configured: bool
 
           {error ? <p id="gate-error" className="gate-error" role="alert">{error}</p> : null}
 
-          <button type="submit" className="btn" disabled={!password || busy}
+          <button type="submit" className="btn" disabled={!password || busy || !configured}
             style={{ width: "100%", marginTop: "var(--sp-md)" }}>
             {busy ? "Entrando…" : "Entrar"}
           </button>
@@ -65,9 +65,10 @@ export function LoginForm({ next, configured }: { next: string; configured: bool
 
         {!configured ? (
           <p className="note" style={{ ["--i" as string]: 2 }}>
-            <strong>Sin proteger.</strong> Faltan <span className="num">APP_PASSWORD</span> y{" "}
-            <span className="num">AUTH_SECRET</span> en las variables de entorno, así que
-            cualquiera puede entrar. Defínelas en Vercel y vuelve a desplegar.
+            <strong>Falta configurar el acceso.</strong> No están definidas{" "}
+            <span className="num">APP_PASSWORD</span> ni <span className="num">AUTH_SECRET</span>,
+            así que la app está cerrada para todos, incluido tú. Defínelas en Vercel
+            (Project Settings → Environment Variables) y vuelve a desplegar.
           </p>
         ) : null}
       </div>
