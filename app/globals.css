@@ -929,3 +929,9 @@ ul, ol { padding: 0; list-style: none; }
   resize: vertical;
   font-family: var(--font-chivo-mono), ui-monospace, monospace;
 }
+
+/* ---------- cadencia ---------- */
+
+.cadence { padding-top: var(--sp-xs); }
+.choice-side { font-size: var(--text-md); font-weight: 500; color: var(--c7); flex-shrink: 0; }
+.choice[aria-selected="true"] .choice-side { color: var(--c8); }

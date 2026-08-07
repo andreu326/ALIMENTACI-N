@@ -222,6 +222,8 @@ export function getTripPlan(
   months = 11,
   targetDays = 30,
   strategy: FormatStrategy = "value",
+  /** Parámetros sólo para el primer viaje. Sirve para un arranque parche. */
+  firstTrip?: { days: number; strategy: FormatStrategy },
 ): TripPlan {
   const daily = getDailyUsage(state);
   const tracked = resolvedIngredients(state).filter(
@@ -240,15 +242,18 @@ export function getTripPlan(
   while (cursor < end && guard < 400) {
     guard += 1;
     const items: TripItem[] = [];
+    const isFirst = index === 1 && firstTrip !== undefined;
+    const windowDays = isFirst ? firstTrip!.days : targetDays;
+    const pick = isFirst ? firstTrip!.strategy : strategy;
 
     for (const ingredient of tracked) {
       const use = daily.get(ingredient.id) ?? 0;
-      const horizon = Math.min(targetDays, ingredient.shelfLifeDays);
+      const horizon = Math.min(windowDays, ingredient.shelfLifeDays);
       const have = stock.get(ingredient.id) ?? 0;
       const need = use * horizon - have;
       if (need <= 0.0001) continue;
 
-      const best = pickFormat(ingredient, need, strategy, use);
+      const best = pickFormat(ingredient, need, pick, use);
       if (!best) continue;
       const after = have + best.purchased;
       stock.set(ingredient.id, after);
@@ -265,7 +270,7 @@ export function getTripPlan(
     }
 
     // ¿Cuántos días aguanta la despensa antes de que algo se acabe?
-    let span = targetDays;
+    let span = windowDays;
     let bottleneck: Trip["bottleneck"] = null;
     for (const ingredient of tracked) {
       const use = daily.get(ingredient.id) ?? 0;
@@ -275,7 +280,7 @@ export function getTripPlan(
         bottleneck = { name: ingredient.name, date: toKey(addDays(cursor, lasts)) };
       }
     }
-    span = Math.max(1, Math.min(span, targetDays));
+    span = Math.max(1, Math.min(span, windowDays));
 
     trips.push({
       index,
@@ -591,4 +596,17 @@ export function getPortionSuggestion(state: MealPrepState): PortionSuggestion | 
     chickenGrams: Math.round(halves / 1.33 / 5) * 5, // 133 kcal por 100 g
     reason,
   };
+}
+
+/**
+ * El plan según la configuración guardada. Todas las pantallas deben usar esto
+ * y no llamar a `getTripPlan` con parámetros propios: si cada una elige los
+ * suyos, el resumen y el detalle muestran cifras distintas.
+ */
+export function getPlan(state: MealPrepState, startDate: string, months = 11): TripPlan {
+  const s = state.planSettings;
+  return getTripPlan(state, startDate, months, s.cadenceDays, s.strategy, {
+    days: s.firstTripDays,
+    strategy: s.firstTripStrategy,
+  });
 }

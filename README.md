@@ -36,6 +36,30 @@ La diferencia sale de tres cosas:
 - `cash` — minimiza el **desembolso del día**. Sirve cuando la restricción es la
   caja de ese viernes y no el costo total.
 
+## Cadencia
+
+El primer viaje se configura aparte del resto, porque su restricción suele ser
+otra: cuánta plata sale ese día, no cuánto cuesta el año.
+
+| arranque | primera compra | cubre |
+|---|---|---|
+| Parche | $73.380 | 7 días |
+| Completo | $137.420 | 30 días |
+
+| después | viajes | 11 meses |
+|---|---|---|
+| Semanal | 48 | $1.198.700 |
+| Quincenal | 23 | $1.218.910 |
+| Mensual | 12 | $1.217.220 |
+
+Quincenal cuesta lo mismo que mensual con el doble de viajes, así que no tiene
+sentido. Semanal ahorra ~$18.500 en once meses a cambio de 36 viajes más: unos
+$500 por viaje evitado.
+
+Todas las pantallas leen el plan con `getPlan(state, …)`. No deben llamar a
+`getTripPlan` con parámetros propios: si cada una elige los suyos, el resumen y
+el detalle terminan mostrando cifras distintas.
+
 ## Bitácora
 
 El plan es una proyección; la app compara esa proyección con lo que realmente

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { PLAN_START } from "@/data/seed";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
 import { CheckMark, Chevron, Figure, durationLabel } from "@/components/app/bits";
-import { formatCLP, formatDate, getTripPlan, todayKey } from "@/utils/mealprep-calculations";
+import { formatCLP, formatDate, getPlan, todayKey } from "@/utils/mealprep-calculations";
 import { ShareList } from "@/components/app/share-list";
 import { PriceField } from "@/components/app/price-field";
 import type { TripStatus } from "@/types/mealprep";
@@ -17,7 +17,7 @@ const STATUSES: { id: TripStatus; label: string }[] = [
 
 export function TripView({ index, onBack }: { index: number; onBack: () => void }) {
   const { state, actions } = useMealPrep();
-  const plan = useMemo(() => getTripPlan(state, PLAN_START, 11, 30), [state]);
+  const plan = useMemo(() => getPlan(state, PLAN_START, 11), [state]);
   const trip = plan.trips.find((t) => t.index === index);
 
   if (!trip) {

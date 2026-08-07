@@ -12,7 +12,7 @@ import { ExtrasEditor } from "@/components/app/extras";
 import { PortionSuggestion } from "@/components/app/suggestion";
 import { CheckMark } from "@/components/app/bits";
 import {
-  daysBetween, formatCLP, formatDate, getConsumed, getRecipeTotals, getTripPlan, todayKey,
+  daysBetween, formatCLP, formatDate, getConsumed, getRecipeTotals, getPlan, todayKey,
 } from "@/utils/mealprep-calculations";
 
 const LETTERS = ["L", "M", "M", "J", "V", "S", "D"];
@@ -53,7 +53,7 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
   }, [dates, day]);
   const totals = useMemo(() => getConsumed(state, day, dateKey), [state, day, dateKey]);
   const dayLog = state.dayLog[dateKey];
-  const plan = useMemo(() => getTripPlan(state, PLAN_START, 11, 30), [state]);
+  const plan = useMemo(() => getPlan(state, PLAN_START, 11), [state]);
   const ingredients = useMemo(
     () => new Map(state.ingredients.map((i) => [i.id, i])),
     [state.ingredients],

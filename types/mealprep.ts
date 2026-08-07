@@ -140,6 +140,18 @@ export type PortionSuggestion = {
   reason: string;
 };
 
+/**
+ * Cadencia del plan. El primer viaje puede ir con otros parámetros: sirve para
+ * un arranque parche cuando la restricción de ese día es la caja y no el costo
+ * total, sin cambiar el régimen que viene después.
+ */
+export type PlanSettings = {
+  firstTripDays: number;
+  firstTripStrategy: "value" | "cash";
+  cadenceDays: number;
+  strategy: "value" | "cash";
+};
+
 export type TripStatus = "pendiente" | "hecho" | "saltado";
 
 export type TripLogEntry = {
@@ -151,7 +163,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 6;
+  version: 7;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];
@@ -165,6 +177,7 @@ export type MealPrepState = {
   dayLog: Record<string, DayLog>;
   /** Precio corregido en tienda, por id de formato. */
   priceOverrides: Record<string, number>;
+  planSettings: PlanSettings;
   /** Indexado por número de viaje. */
   tripLog: Record<number, TripLogEntry>;
 };
@@ -262,6 +275,7 @@ export type MealPrepActions = {
   addExtra: (date: string, extra: Omit<ExtraFood, "id">) => void;
   removeExtra: (date: string, id: string) => void;
   setPriceOverride: (formatId: string, price: number | null) => void;
+  setPlanSettings: (settings: Partial<PlanSettings>) => void;
   scalePortions: (factorByIngredient: Record<string, number>) => void;
   setTripStatus: (index: number, entry: TripLogEntry | null) => void;
   saveIngredient: (ingredient: Ingredient) => void;

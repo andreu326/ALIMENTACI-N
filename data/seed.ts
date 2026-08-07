@@ -341,7 +341,7 @@ const recipes: Recipe[] = [
 ];
 
 export const seedState: MealPrepState = {
-  version: 6,
+  version: 7,
   targets: { calories: 2700, protein: 140, carbs: 360, fat: 65, weeklyBudget: 30000 },
   ingredients,
   recipes,
@@ -357,6 +357,14 @@ export const seedState: MealPrepState = {
   measurementLog: [],
   dayLog: {},
   priceOverrides: {},
+  // Arranque parche: el viernes 7 se compra sólo la semana, con los formatos que
+  // menos plata sacan ese día. Desde el segundo viaje se pasa a régimen mensual.
+  planSettings: {
+    firstTripDays: 7,
+    firstTripStrategy: "cash",
+    cadenceDays: 30,
+    strategy: "value",
+  },
   tripLog: {},
 };
 

@@ -4,9 +4,10 @@ import { useMemo, useState } from "react";
 import { PLAN_START } from "@/data/seed";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
 import { TripCalendar } from "@/components/app/calendar";
+import { CadenceSettings } from "@/components/app/cadence";
 import { Chevron, quantityLabel } from "@/components/app/bits";
 import type { TripStatus } from "@/types/mealprep";
-import { formatCLP, formatDate, getFeriaPlan, getTripPlan } from "@/utils/mealprep-calculations";
+import { formatCLP, formatDate, getFeriaPlan, getPlan } from "@/utils/mealprep-calculations";
 
 type Mode = "calendario" | "lista";
 
@@ -20,7 +21,7 @@ export function TripsView({ onOpenTrip }: { onOpenTrip: (index: number) => void 
   const [mode, setMode] = useState<Mode>("calendario");
   const [feriaDays, setFeriaDays] = useState(30);
 
-  const plan = useMemo(() => getTripPlan(state, PLAN_START, 11, 30), [state]);
+  const plan = useMemo(() => getPlan(state, PLAN_START, 11), [state]);
   const feria = useMemo(() => getFeriaPlan(state, feriaDays), [state, feriaDays]);
 
   const statusOf = (index: number): TripStatus => state.tripLog[index]?.status ?? "pendiente";
@@ -64,7 +65,11 @@ export function TripsView({ onOpenTrip }: { onOpenTrip: (index: number) => void 
         </div>
       </header>
 
-      <section className="section" style={{ ["--i" as string]: 1, marginTop: "var(--sp-lg)" }}>
+      <div style={{ ["--i" as string]: 1 }}>
+        <CadenceSettings />
+      </div>
+
+      <section className="section" style={{ ["--i" as string]: 2 }}>
         {mode === "calendario" ? (
           <TripCalendar trips={plan.trips} statusOf={statusOf} onSelect={onOpenTrip} />
         ) : (
@@ -108,7 +113,7 @@ export function TripsView({ onOpenTrip }: { onOpenTrip: (index: number) => void 
         )}
       </section>
 
-      <section className="section" style={{ ["--i" as string]: 2 }}>
+      <section className="section" style={{ ["--i" as string]: 3 }}>
         <div className="section-head">
           <h2 className="section-title">Feria, aparte</h2>
           <span className="section-meta num">
