@@ -85,7 +85,13 @@ export type Recipe = {
   prepMinutes: number;
   notes?: string;
   ingredients: RecipeIngredient[];
-  /** Paso a paso de la tanda completa, no de una porción. */
+  /**
+   * `batch` — se cocina una vez para toda la semana y los pasos son de la tanda.
+   * `daily` — se hace fresco cada día y los pasos son de UNA porción. Los huevos
+   * fritos no aguantan tanda, así que forzarlos al molde semanal no sirve.
+   */
+  prepMode: "batch" | "daily";
+  /** Paso a paso, en la escala que indique `prepMode`. */
   steps: RecipeStep[];
   /** Cómo guardar lo que sobra y cuánto aguanta. */
   storage?: string;
@@ -218,7 +224,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 9;
+  version: 10;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];

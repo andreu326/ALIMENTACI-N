@@ -99,8 +99,14 @@ muestra el desvío entre lo proyectado y lo real.
 
 ## Cocina
 
-Las cantidades de cada receta ya vienen para la tanda completa (`servings` días),
-no por porción. La pantalla muestra el total y el por-día en paralelo.
+Cada receta declara su `prepMode`:
+
+- `batch` — se cocina una vez para toda la semana y los pasos son de la tanda.
+- `daily` — se hace fresco cada día y los pasos son de **una porción**. Los huevos
+  fritos no aguantan tanda, así que forzarlos al molde semanal no servía de nada.
+
+En las recetas `daily` los marcadores sin barra ya se resuelven por porción, y la
+sesión de tanda las excluye del cálculo de tiempo.
 
 El tiempo de la sesión **no es la suma de las recetas**: mientras hierven las
 papas y las lentejas se pica y se saltea lo demás. `getBatchSession` lo estima

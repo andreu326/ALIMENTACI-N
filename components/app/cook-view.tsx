@@ -30,13 +30,18 @@ export function CookView() {
     });
   };
 
+  const tanda = batches.filter((b) => b.recipe.prepMode !== "daily");
+  const diarias = batches.filter((b) => b.recipe.prepMode === "daily");
+
   // Las tandas largas parten primero: mientras hierven se cocinan las otras.
-  const orden = [...batches].sort((a, b) => b.totalMinutes - a.totalMinutes);
+  const orden = [...tanda].sort((a, b) => b.totalMinutes - a.totalMinutes);
 
   return (
     <div className="page stagger">
       <header style={{ ["--i" as string]: 0, paddingTop: "var(--sp-lg)" }}>
-        <p className="eyebrow">Una tanda para los 7 días</p>
+        <p className="eyebrow">
+          {tanda.length} en tanda · {diarias.length} cada mañana
+        </p>
         <h1 className="title">Cocina</h1>
         <p className="num" style={{ fontSize: "var(--text-2xl)", fontWeight: 500, letterSpacing: "-0.045em", marginTop: "var(--sp-md)", lineHeight: 1 }}>
           {hhmm(session.minutes)}
@@ -44,11 +49,17 @@ export function CookView() {
         <p className="section-meta" style={{ marginTop: 6 }}>
           {hhmm(session.active)} de trabajo real · el resto es hervir y esperar
         </p>
+        {diarias.length > 0 ? (
+          <p className="section-meta" style={{ marginTop: 4 }}>
+            Más {hhmm(diarias.reduce((sum, b) => sum + b.totalMinutes, 0))} cada
+            mañana para el desayuno, que se hace fresco.
+          </p>
+        ) : null}
       </header>
 
       <section className="section" style={{ ["--i" as string]: 1 }}>
         <div className="section-head">
-          <h2 className="section-title">Orden</h2>
+          <h2 className="section-title">Orden de la tanda</h2>
           <span className="section-meta">para no perder tiempo</span>
         </div>
         <ol className="order">
@@ -68,7 +79,7 @@ export function CookView() {
         </ol>
       </section>
 
-      {batches.map((b, index) => {
+      {[...tanda, ...diarias].map((b, index) => {
         const isOpen = open === b.recipe.id;
         return (
           <section key={b.recipe.id} className="section" style={{ ["--i" as string]: 2 + index }}>
@@ -80,10 +91,14 @@ export function CookView() {
             >
               <MealArt recipeId={b.recipe.id} />
               <span>
-                <span className="meal-slot">{b.recipe.category}</span>
+                <span className="meal-slot">
+                  {b.recipe.prepMode === "daily" ? "Cada mañana" : b.recipe.category}
+                </span>
                 <span className="meal-name">{b.recipe.name}</span>
                 <span className="meal-macros num">
-                  {b.recipe.servings} porciones · {hhmm(b.totalMinutes)}
+                  {b.recipe.prepMode === "daily"
+                    ? `1 porción · ${hhmm(b.totalMinutes)}`
+                    : `${b.recipe.servings} porciones · ${hhmm(b.totalMinutes)}`}
                 </span>
               </span>
             </button>
@@ -123,7 +138,7 @@ export function CookView() {
                 ) : null}
 
                 <p className="field-label" style={{ marginTop: "var(--sp-lg)" }}>
-                  Cantidades de la tanda
+                  {b.recipe.prepMode === "daily" ? "Cantidades de una porción" : "Cantidades de la tanda"}
                 </p>
                 <ul className="rows" style={{ marginTop: "var(--sp-xs)" }}>
                   {b.lines.map((line) => (
@@ -131,11 +146,16 @@ export function CookView() {
                       <span className="row-main">
                         <span className="row-name">{line.name}</span>
                         <span className="row-sub num">
-                          {quantityLabel(line.perServing, line.unit)} por día
+                          {b.recipe.prepMode === "daily"
+                            ? `${quantityLabel(line.total, line.unit)} en la semana`
+                            : `${quantityLabel(line.perServing, line.unit)} por día`}
                         </span>
                       </span>
                       <span className="row-value num">
-                        {quantityLabel(line.total, line.unit)}
+                        {quantityLabel(
+                          b.recipe.prepMode === "daily" ? line.perServing : line.total,
+                          line.unit,
+                        )}
                       </span>
                     </li>
                   ))}

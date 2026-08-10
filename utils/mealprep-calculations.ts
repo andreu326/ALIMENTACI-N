@@ -694,14 +694,16 @@ export function getBatch(state: MealPrepState): BatchRecipe[] {
  * de una receta más el trabajo activo de las otras.
  */
 export function getBatchSession(batches: BatchRecipe[]) {
-  if (batches.length === 0) return { minutes: 0, active: 0 };
-  const longest = Math.max(...batches.map((b) => b.totalMinutes));
-  const otherActive = batches
+  // Sólo cuenta lo que se cocina en tanda: lo diario no ocupa ese día.
+  const inBatch = batches.filter((b) => b.recipe.prepMode !== "daily");
+  if (inBatch.length === 0) return { minutes: 0, active: 0 };
+  const longest = Math.max(...inBatch.map((b) => b.totalMinutes));
+  const otherActive = inBatch
     .filter((b) => b.totalMinutes !== longest)
     .reduce((sum, b) => sum + b.activeMinutes, 0);
   return {
     minutes: longest + otherActive,
-    active: batches.reduce((sum, b) => sum + b.activeMinutes, 0),
+    active: inBatch.reduce((sum, b) => sum + b.activeMinutes, 0),
   };
 }
 
@@ -730,7 +732,9 @@ export function renderStep(text: string, recipe: Recipe, ingredients: Ingredient
     const ingredient = map.get(id);
     if (!line || !ingredient) return whole;
 
-    let value = perServing ? line.quantity / per : line.quantity;
+    // En las recetas diarias todo es por porción: el marcador sin barra también.
+    const daily = recipe.prepMode === "daily";
+    let value = perServing || daily ? line.quantity / per : line.quantity;
     if (factor) value *= Number(factor);
 
     // El agua del arroz se calcula desde los gramos de arroz pero se sirve en

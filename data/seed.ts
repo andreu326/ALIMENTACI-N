@@ -304,7 +304,8 @@ const recipes: Recipe[] = [
     category: "Desayuno",
     servings: 7,
     prepMinutes: 20,
-    notes: "Por día: 2 huevos, 200 g de marraqueta, 150 g de salsa, 25 g de mantecoso, 4 g de margarina y un diente de ajo.",
+    prepMode: "daily",
+    notes: "Se hace fresco cada mañana: los huevos fritos no aguantan una tanda.",
     ingredients: [
       { ingredientId: "huevo", quantity: 14, component: "Huevos" },
       { ingredientId: "marraqueta", quantity: 1400, component: "Marraqueta" },
@@ -315,13 +316,15 @@ const recipes: Recipe[] = [
       { ingredientId: "oregano", quantity: 5.6, component: "Base de tomate" },
     ],
     steps: [
-      { text: "Pica {ajo} de ajo bien fino.", minutes: 3 },
-      { text: "Calienta {margarina} de margarina en una olla y dora el ajo sin que se queme, unos 40 segundos.", minutes: 2 },
-      { text: "Echa {salsa} de salsa de tomate y el orégano. Deja reducir a fuego bajo hasta que espese y no quede aguada.", minutes: 18, passive: true },
-      { text: "Sal a gusto, enfría y reparte en un frasco. Esta es la base para los siete días.", minutes: 5 },
+      { text: "Pica {ajo/} de ajo bien fino: es más o menos un diente.", minutes: 1 },
+      { text: "Derrite {margarina/} de margarina en un sartén chico y dora el ajo 30 segundos, sin que tome color oscuro.", minutes: 1 },
+      { text: "Echa {salsa/} de salsa de tomate y {oregano/} de orégano. Deja hervir suave hasta que espese y deje de estar aguada.", minutes: 4 },
+      { text: "Haz dos huecos en la salsa y estrella ahí los {huevo/} huevos. Tapa el sartén.", minutes: 1 },
+      { text: "Cocina tapado hasta que la clara cuaje y la yema quede blanda. Si te gusta más firme, dos minutos más.", minutes: 4, passive: true },
+      { text: "Ralla {mantecoso/} de mantecoso encima, apaga y tapa 30 segundos para que se derrita.", minutes: 1 },
+      { text: "Tuesta {marraqueta/} de marraqueta y sirve.", minutes: 3 },
     ],
-    storage: "La base de tomate aguanta 5 días en el refrigerador. Si vas a hacer los 7, congela la mitad en dos frascos y pásala al refrigerador la noche anterior.",
-    daily: "Calienta {salsa/} de base en un sartén, hazle dos huecos y estrella los {huevo/} huevos encima. Tapa 4 minutos. Ralla {mantecoso/} de mantecoso encima y tuesta {marraqueta/} de marraqueta.",
+    storage: "No se guarda: se come al momento. Lo único que puedes adelantar es picar el ajo de varios días y dejarlo en un frasco tapado.",
   },
   {
     id: "almuerzo",
@@ -329,6 +332,7 @@ const recipes: Recipe[] = [
     category: "Almuerzo",
     servings: 7,
     prepMinutes: 40,
+    prepMode: "batch",
     notes: "260 g de pollo y 200 g de arroz crudo por día. El pollo se saca del freezer la noche anterior.",
     ingredients: [
       { ingredientId: "pollo", quantity: 1820, component: "Pollo salteado" },
@@ -355,6 +359,7 @@ const recipes: Recipe[] = [
     category: "Cena",
     servings: 7,
     prepMinutes: 45,
+    prepMode: "batch",
     notes: "120 g de molida, 400 g de papas, 55 g de lentejas y 200 ml de leche por día. Las lentejas suben la proteína a costo casi nulo.",
     ingredients: [
       { ingredientId: "molida", quantity: 840, component: "Guiso" },
@@ -382,7 +387,7 @@ const recipes: Recipe[] = [
 ];
 
 export const seedState: MealPrepState = {
-  version: 9,
+  version: 10,
   targets: { calories: 2700, protein: 140, carbs: 360, fat: 65, weeklyBudget: 30000 },
   ingredients,
   recipes,
