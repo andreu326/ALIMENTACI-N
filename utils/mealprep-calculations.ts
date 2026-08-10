@@ -1,7 +1,7 @@
 import type {
   Ingredient, MealPrepState, Profile, PurchaseFormat, Recipe, RecipeTotals,
   BatchLine, BatchRecipe, ConsumedTotals, MeasurementSite, MeasurementTrend,
-  PortionSuggestion,
+  PlateComponent, PortionSuggestion,
   ShoppingLine, Trip, TripItem, TripPlan,
   WeightPoint, WeightProjection,
 } from "@/types/mealprep";
@@ -619,6 +619,43 @@ export function getPlan(state: MealPrepState, startDate: string, months = 11): T
 // ---------- tanda de cocina ----------
 
 /**
+ * Lo que va en el plato, ya cocido. Las cantidades del plan son en crudo porque
+ * así se compra y así se pesa, pero sirviendo desde la olla eso no sirve: 200 g
+ * de arroz crudo son más de medio kilo en el plato.
+ */
+function getPlate(recipe: Recipe, map: Map<string, Ingredient>): PlateComponent[] {
+  const per = recipe.servings || 1;
+  const groups = new Map<string, PlateComponent>();
+
+  for (const line of recipe.ingredients) {
+    if (!line.component) continue;
+    const ingredient = map.get(line.ingredientId);
+    if (!ingredient) continue;
+
+    const raw = line.quantity / per;
+    // En los ingredientes por unidad el rendimiento son gramos por unidad.
+    const cooked = ingredient.unit === "unidad"
+      ? raw * (ingredient.cookedYield ?? 0)
+      : raw * (ingredient.cookedYield ?? 1);
+
+    const group = groups.get(line.component)
+      ?? { name: line.component, grams: 0, parts: [] };
+    group.grams += cooked;
+    group.parts.push({
+      name: ingredient.name,
+      raw: round(raw, 1),
+      cooked: round(cooked),
+      unit: ingredient.unit,
+    });
+    groups.set(line.component, group);
+  }
+
+  return [...groups.values()]
+    .map((g) => ({ ...g, grams: round(g.grams) }))
+    .sort((a, b) => b.grams - a.grams);
+}
+
+/**
  * Las cantidades de una receta ya vienen para la tanda completa (`servings`
  * días), así que aquí sólo se resuelven nombres y se calcula el por-porción.
  */
@@ -641,11 +678,13 @@ export function getBatch(state: MealPrepState): BatchRecipe[] {
       .filter((l): l is BatchLine => l !== null)
       .sort((a, b) => b.total - a.total);
 
+    const plate = getPlate(recipe, map);
+
     const activeMinutes = recipe.steps
       .filter((s) => !s.passive)
       .reduce((sum, s) => sum + (s.minutes ?? 0), 0);
     const totalMinutes = recipe.steps.reduce((sum, s) => sum + (s.minutes ?? 0), 0);
-    return { recipe, lines, activeMinutes, totalMinutes };
+    return { recipe, lines, activeMinutes, totalMinutes, plate };
   });
 }
 
@@ -676,6 +715,13 @@ export function getBatchSession(batches: BatchRecipe[]) {
 export function renderStep(text: string, recipe: Recipe, ingredients: Ingredient[]): string {
   const map = new Map(ingredients.map((i) => [i.id, i]));
   const per = recipe.servings || 1;
+
+  // {plato:Puré} → gramos servidos de esa parte del plato, ya cocida.
+  const plate = getPlate(recipe, map);
+  text = text.replace(/\{plato:([^}]+)\}/g, (whole, name) => {
+    const component = plate.find((c) => c.name === name);
+    return component ? `${component.grams.toLocaleString("es-CL")} g` : whole;
+  });
 
   return text.replace(/\{(\w+)(\/)?(?:\*([\d.]+))?(?:\|(\w+))?\}/g,
     (whole, id, perServing, factor, unitOverride) => {

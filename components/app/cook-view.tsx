@@ -90,7 +90,39 @@ export function CookView() {
 
             <div className="reveal" data-open={isOpen}>
               <div>
-                <p className="field-label" style={{ marginTop: "var(--sp-md)" }}>
+                {b.plate.length > 0 ? (
+                  <>
+                    <p className="field-label" style={{ marginTop: "var(--sp-md)" }}>
+                      Por plato, ya cocido
+                    </p>
+                    <ul className="plate">
+                      {b.plate.map((c) => (
+                        <li key={c.name}>
+                          <div className="plate-head">
+                            <span className="plate-name">{c.name}</span>
+                            <span className="plate-grams num">{c.grams} g</span>
+                          </div>
+                          <div className="plate-bar" aria-hidden="true">
+                            <span style={{ width: `${(c.grams / b.plate[0].grams) * 100}%` }} />
+                          </div>
+                          <p className="plate-parts num">
+                            {c.parts
+                              .filter((part) => part.cooked >= 5)
+                              .map((part) => `${part.raw} ${part.unit === "unidad" ? "un" : part.unit} ${part.name.toLowerCase()}`)
+                              .join(" · ")}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="field-note" style={{ marginTop: "var(--sp-md)" }}>
+                      Bajo cada parte va lo que aporta <strong>en crudo</strong>. El
+                      arroz casi triplica su peso al absorber agua; el pollo y la
+                      carne pierden cerca de un tercio al cocinarse.
+                    </p>
+                  </>
+                ) : null}
+
+                <p className="field-label" style={{ marginTop: "var(--sp-lg)" }}>
                   Cantidades de la tanda
                 </p>
                 <ul className="rows" style={{ marginTop: "var(--sp-xs)" }}>

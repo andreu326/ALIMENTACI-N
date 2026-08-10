@@ -984,3 +984,26 @@ ul, ol { padding: 0; list-style: none; }
   letter-spacing: -0.012em;
 }
 .step-time { display: block; font-size: var(--text-sm); color: var(--c5); margin-top: 3px; }
+
+/* ---------- reparto del plato ---------- */
+
+.plate { display: grid; gap: var(--sp-md); margin-top: var(--sp-sm); }
+.plate-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-sm); }
+.plate-name { font-size: var(--text-md); font-weight: 500; letter-spacing: -0.018em; }
+.plate-grams { font-size: var(--text-md); font-weight: 500; }
+
+.plate-bar {
+  height: 5px;
+  background: var(--c2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.plate-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--c7);
+  border-radius: 3px;
+}
+
+.plate-parts { font-size: var(--text-sm); color: var(--c5); margin-top: 6px; line-height: 1.5; }

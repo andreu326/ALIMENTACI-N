@@ -111,13 +111,30 @@ Cada receta trae `steps` con minutos y marca de espera pasiva, `storage` (cómo
 guardar lo que sobra y cuánto aguanta) y `daily` (qué hacer cada día con la
 porción).
 
+### Crudo contra cocido
+
+Las cantidades del plan son **en crudo**, que es como se compra y como se pesa.
+Sirviendo desde la olla eso no sirve: 200 g de arroz crudo son más de medio kilo
+en el plato. Cada ingrediente tiene `cookedYield` y cada línea de receta un
+`component`, así que la pantalla puede mostrar el reparto real del plato.
+
+| plato | reparto |
+|---|---|
+| Almuerzo | 544 g de arroz + 224 g de pollo salteado |
+| Cena | 592 g de puré + 258 g de guiso |
+| Desayuno | 180 g de marraqueta + 125 g de huevos + 120 g de base |
+
+Rendimientos usados: arroz 2,7× · lentejas 2,4× · papas 0,98× · pollo 0,72× ·
+molida 0,70× · cebolla 0,6× · salsa 0,75× · huevo 50 g por unidad.
+
 Los pasos **no llevan los gramos escritos a mano**: usan marcadores que
 `renderStep` reemplaza por la cantidad real de la receta.
 
-    {arroz}      total de la tanda
-    {arroz/}     por porción
-    {arroz*2|L}  total × 2, forzado a litros (el agua del arroz)
-    {porciones}  cuántos envases salen
+    {arroz}       total de la tanda
+    {arroz/}      por porción
+    {arroz*2|L}   total × 2, forzado a litros (el agua del arroz)
+    {porciones}   cuántos envases salen
+    {plato:Puré}  gramos servidos de esa parte, ya cocida
 
 Sin esto, aceptar la sugerencia de porciones dejaba las instrucciones mintiendo:
 la receta pasaba a 1.610 g de arroz y el paso seguía diciendo 1.400 g. Las notas de conservación no son decorativas: el arroz cocido no pasa

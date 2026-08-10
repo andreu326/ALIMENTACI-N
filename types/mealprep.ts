@@ -36,6 +36,12 @@ export type Ingredient = {
   fat: number;
   brand?: string;
   source: SupplySource;
+  /**
+   * Cuánto pesa cocido respecto del crudo. El arroz casi triplica al absorber
+   * agua; el pollo y la carne pierden un tercio. Sin esto las cantidades del
+   * plan no sirven para servir desde la olla.
+   */
+  cookedYield?: number;
   /** Días que aguanta cerrado, en su envase original. */
   shelfLifeDays: number;
   /**
@@ -50,7 +56,10 @@ export type Ingredient = {
 
 export type RecipeIngredient = {
   ingredientId: string;
+  /** Siempre en crudo, que es como se compra y como se pesa al cocinar. */
   quantity: number;
+  /** Parte del plato a la que va: "Puré", "Guiso", "Arroz"… */
+  component?: string;
 };
 
 export type RecipeStep = {
@@ -93,11 +102,20 @@ export type BatchLine = {
   perServing: number;
 };
 
+/** Lo que va en el plato, ya cocido. */
+export type PlateComponent = {
+  name: string;
+  /** Gramos servidos por plato. */
+  grams: number;
+  parts: { name: string; raw: number; cooked: number; unit: BaseUnit }[];
+};
+
 export type BatchRecipe = {
   recipe: Recipe;
   lines: BatchLine[];
   activeMinutes: number;
   totalMinutes: number;
+  plate: PlateComponent[];
 };
 
 export type PlannedMeal = {
@@ -200,7 +218,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 8;
+  version: 9;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];
