@@ -302,6 +302,14 @@ const recipes: Recipe[] = [
       { ingredientId: "ajo", quantity: 21 },
       { ingredientId: "oregano", quantity: 5.6 },
     ],
+    steps: [
+      { text: "Pica los 21 g de ajo bien fino.", minutes: 3 },
+      { text: "Calienta los 28 g de margarina en una olla y dora el ajo sin que se queme, unos 40 segundos.", minutes: 2 },
+      { text: "Echa los 1.050 g de salsa de tomate y el orégano. Deja reducir a fuego bajo hasta que espese y no quede aguada.", minutes: 18, passive: true },
+      { text: "Sal a gusto, enfría y reparte en un frasco. Esta es la base para los siete días.", minutes: 5 },
+    ],
+    storage: "La base de tomate aguanta 5 días en el refrigerador. Si vas a hacer los 7, congela la mitad en dos frascos y pásala al refrigerador la noche anterior.",
+    daily: "Calienta 150 g de base en un sartén, hazle dos huecos y estrella los 2 huevos encima. Tapa 4 minutos. Ralla los 25 g de mantecoso encima y tuesta 200 g de marraqueta.",
   },
   {
     id: "almuerzo",
@@ -318,6 +326,16 @@ const recipes: Recipe[] = [
       { ingredientId: "cebolla", quantity: 350 },
       { ingredientId: "sal", quantity: 28 },
     ],
+    steps: [
+      { text: "Saca los 1.820 g de pollo del freezer al refrigerador la noche anterior. Nunca lo descongeles sobre el mesón.", minutes: 0 },
+      { text: "Lava los 1.400 g de arroz hasta que el agua salga clara. Cocínalo con 2,8 L de agua y la mitad de la sal.", minutes: 20, passive: true },
+      { text: "Mientras se cocina el arroz, pica los 350 g de cebolla en pluma y corta el pollo en tiras del grosor de un dedo.", minutes: 10 },
+      { text: "Calienta los 35 g de aceite en el sartén más grande que tengas. Sella el pollo POR TANDAS, sin amontonar: si lo echas todo junto suelta agua y se cuece en vez de dorarse.", minutes: 18 },
+      { text: "Agrega la cebolla, la paprika y el resto de la sal. Saltea hasta que la cebolla se transparente.", minutes: 6 },
+      { text: "Reparte en 7 envases: 200 g de arroz cocido y 260 g de pollo en cada uno. Deja enfriar destapados antes de tapar y refrigerar.", minutes: 10 },
+    ],
+    storage: "El arroz cocido aguanta 4 días en el refrigerador y no más: el Bacillus cereus se multiplica rápido en arroz tibio. Congela 3 de los 7 envases apenas se enfríen y bájalos la noche antes.",
+    daily: "Recalienta hasta que salga vapor del centro, no sólo tibio. En microondas: tapa, 2 minutos, revuelve y 1 minuto más.",
   },
   {
     id: "cena",
@@ -337,11 +355,22 @@ const recipes: Recipe[] = [
       { ingredientId: "pimienta", quantity: 17.5 },
       { ingredientId: "comino", quantity: 7 },
     ],
+    steps: [
+      { text: "Enjuaga los 385 g de lentejas y ponlas a hervir en agua sin sal. No necesitan remojo previo.", minutes: 25, passive: true },
+      { text: "Pela los 2.800 g de papas y córtalas en cubos parejos. Ponlas a hervir en agua con sal en otra olla.", minutes: 25, passive: true },
+      { text: "Pica los 350 g de cebolla y los 21 g de ajo mientras hierven las dos ollas.", minutes: 8 },
+      { text: "Dora la cebolla y el ajo, agrega los 840 g de carne molida y deshazla con la cuchara. Cocina hasta que pierda todo el color rosado.", minutes: 12 },
+      { text: "Suma el comino, la pimienta y la sal. Escurre las lentejas y échalas a la carne.", minutes: 3 },
+      { text: "Escurre las papas y hazlas puré con los 1.400 ml de leche tibia. Leche fría deja el puré pastoso.", minutes: 8 },
+      { text: "Reparte en 7 envases: 400 g de puré y el guiso de carne con lentejas encima. Enfría destapado antes de tapar.", minutes: 10 },
+    ],
+    storage: "El puré aguanta 4 días en el refrigerador. Congela bien, pero queda más granulado: si te molesta, congela sólo el guiso de carne y haz el puré fresco esos días.",
+    daily: "Recalienta a fuego bajo con un chorrito de leche: el puré refrigerado se apelmaza y la leche lo devuelve a punto.",
   },
 ];
 
 export const seedState: MealPrepState = {
-  version: 7,
+  version: 8,
   targets: { calories: 2700, protein: 140, carbs: 360, fat: 65, weeklyBudget: 30000 },
   ingredients,
   recipes,

@@ -53,6 +53,14 @@ export type RecipeIngredient = {
   quantity: number;
 };
 
+export type RecipeStep = {
+  text: string;
+  /** Minutos que toma el paso. Los que son de espera se marcan aparte. */
+  minutes?: number;
+  /** Espera sin atención: el tiempo corre mientras haces otra cosa. */
+  passive?: boolean;
+};
+
 export type Recipe = {
   id: string;
   name: string;
@@ -61,6 +69,28 @@ export type Recipe = {
   prepMinutes: number;
   notes?: string;
   ingredients: RecipeIngredient[];
+  /** Paso a paso de la tanda completa, no de una porción. */
+  steps: RecipeStep[];
+  /** Cómo guardar lo que sobra y cuánto aguanta. */
+  storage?: string;
+  /** Qué hacer cada día con la porción ya cocinada. */
+  daily?: string;
+};
+
+/** Una línea de la tanda: cuánto va en total, no por porción. */
+export type BatchLine = {
+  ingredientId: string;
+  name: string;
+  unit: BaseUnit;
+  total: number;
+  perServing: number;
+};
+
+export type BatchRecipe = {
+  recipe: Recipe;
+  lines: BatchLine[];
+  activeMinutes: number;
+  totalMinutes: number;
 };
 
 export type PlannedMeal = {
@@ -163,7 +193,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 7;
+  version: 8;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];

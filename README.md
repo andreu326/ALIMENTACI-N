@@ -97,12 +97,29 @@ regla lineal da +18,2 kg en 11 meses; el modelo iterativo da +13,8.
 Es una estimación, no una promesa. Por eso la app pide registrar el peso y
 muestra el desvío entre lo proyectado y lo real.
 
+## Cocina
+
+Las cantidades de cada receta ya vienen para la tanda completa (`servings` días),
+no por porción. La pantalla muestra el total y el por-día en paralelo.
+
+El tiempo de la sesión **no es la suma de las recetas**: mientras hierven las
+papas y las lentejas se pica y se saltea lo demás. `getBatchSession` lo estima
+como el mayor tiempo total de una receta más el trabajo activo de las otras —
+2 h 25 de reloj contra 1 h 35 de trabajo real.
+
+Cada receta trae `steps` con minutos y marca de espera pasiva, `storage` (cómo
+guardar lo que sobra y cuánto aguanta) y `daily` (qué hacer cada día con la
+porción). Las notas de conservación no son decorativas: el arroz cocido no pasa
+de 4 días refrigerado por riesgo de *Bacillus cereus*, así que la receta indica
+congelar 3 de los 7 envases.
+
 ## Interfaz
 
-Tres pantallas más el detalle de viaje y el perfil, mobile-first para iPhone 14 Pro:
+Cuatro pantallas más el detalle de viaje y el perfil, mobile-first para iPhone 14 Pro:
 
 - **Hoy** — tira de días, anillos de macros, evolución de peso, comidas del día
   con ilustraciones, y la próxima compra.
+- **Cocina** — orden de la tanda, cantidades totales y paso a paso marcable.
 - **Viajes** — calendario mensual con el estado de cada viaje, o vista de lista,
   más el desglose de feria.
 - **Despensa** — precios por kilo, formatos y mínimos de compra.

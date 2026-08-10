@@ -1,6 +1,7 @@
 import type {
   Ingredient, MealPrepState, Profile, PurchaseFormat, Recipe, RecipeTotals,
-  ConsumedTotals, MeasurementSite, MeasurementTrend, PortionSuggestion,
+  BatchLine, BatchRecipe, ConsumedTotals, MeasurementSite, MeasurementTrend,
+  PortionSuggestion,
   ShoppingLine, Trip, TripItem, TripPlan,
   WeightPoint, WeightProjection,
 } from "@/types/mealprep";
@@ -613,4 +614,54 @@ export function getPlan(state: MealPrepState, startDate: string, months = 11): T
     days: s.firstTripDays,
     strategy: s.firstTripStrategy,
   });
+}
+
+// ---------- tanda de cocina ----------
+
+/**
+ * Las cantidades de una receta ya vienen para la tanda completa (`servings`
+ * días), así que aquí sólo se resuelven nombres y se calcula el por-porción.
+ */
+export function getBatch(state: MealPrepState): BatchRecipe[] {
+  const map = new Map(resolvedIngredients(state).map((i) => [i.id, i]));
+  return state.recipes.map((recipe) => {
+    const per = recipe.servings || 1;
+    const lines: BatchLine[] = recipe.ingredients
+      .map((line) => {
+        const ingredient = map.get(line.ingredientId);
+        if (!ingredient) return null;
+        return {
+          ingredientId: line.ingredientId,
+          name: ingredient.name,
+          unit: ingredient.unit,
+          total: round(line.quantity, 1),
+          perServing: round(line.quantity / per, 1),
+        };
+      })
+      .filter((l): l is BatchLine => l !== null)
+      .sort((a, b) => b.total - a.total);
+
+    const activeMinutes = recipe.steps
+      .filter((s) => !s.passive)
+      .reduce((sum, s) => sum + (s.minutes ?? 0), 0);
+    const totalMinutes = recipe.steps.reduce((sum, s) => sum + (s.minutes ?? 0), 0);
+    return { recipe, lines, activeMinutes, totalMinutes };
+  });
+}
+
+/**
+ * El tiempo real de una tanda no es la suma de las recetas: mientras hierven las
+ * papas y las lentejas se pica y se saltea. Se estima como el mayor tiempo total
+ * de una receta más el trabajo activo de las otras.
+ */
+export function getBatchSession(batches: BatchRecipe[]) {
+  if (batches.length === 0) return { minutes: 0, active: 0 };
+  const longest = Math.max(...batches.map((b) => b.totalMinutes));
+  const otherActive = batches
+    .filter((b) => b.totalMinutes !== longest)
+    .reduce((sum, b) => sum + b.activeMinutes, 0);
+  return {
+    minutes: longest + otherActive,
+    active: batches.reduce((sum, b) => sum + b.activeMinutes, 0),
+  };
 }
