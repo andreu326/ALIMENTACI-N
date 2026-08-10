@@ -109,7 +109,18 @@ como el mayor tiempo total de una receta más el trabajo activo de las otras —
 
 Cada receta trae `steps` con minutos y marca de espera pasiva, `storage` (cómo
 guardar lo que sobra y cuánto aguanta) y `daily` (qué hacer cada día con la
-porción). Las notas de conservación no son decorativas: el arroz cocido no pasa
+porción).
+
+Los pasos **no llevan los gramos escritos a mano**: usan marcadores que
+`renderStep` reemplaza por la cantidad real de la receta.
+
+    {arroz}      total de la tanda
+    {arroz/}     por porción
+    {arroz*2|L}  total × 2, forzado a litros (el agua del arroz)
+    {porciones}  cuántos envases salen
+
+Sin esto, aceptar la sugerencia de porciones dejaba las instrucciones mintiendo:
+la receta pasaba a 1.610 g de arroz y el paso seguía diciendo 1.400 g. Las notas de conservación no son decorativas: el arroz cocido no pasa
 de 4 días refrigerado por riesgo de *Bacillus cereus*, así que la receta indica
 congelar 3 de los 7 envases.
 

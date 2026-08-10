@@ -665,3 +665,41 @@ export function getBatchSession(batches: BatchRecipe[]) {
     active: batches.reduce((sum, b) => sum + b.activeMinutes, 0),
   };
 }
+
+/**
+ * Reemplaza los marcadores de un paso por las cantidades reales de la receta.
+ * Sin esto, ajustar las porciones deja las instrucciones desfasadas.
+ *
+ *   {arroz}    → total de la tanda        {arroz/}  → por porción
+ *   {arroz*2}  → total × 2 (agua, etc.)
+ */
+export function renderStep(text: string, recipe: Recipe, ingredients: Ingredient[]): string {
+  const map = new Map(ingredients.map((i) => [i.id, i]));
+  const per = recipe.servings || 1;
+
+  return text.replace(/\{(\w+)(\/)?(?:\*([\d.]+))?(?:\|(\w+))?\}/g,
+    (whole, id, perServing, factor, unitOverride) => {
+    if (id === "porciones") return String(per);
+    const line = recipe.ingredients.find((l) => l.ingredientId === id);
+    const ingredient = map.get(id);
+    if (!line || !ingredient) return whole;
+
+    let value = perServing ? line.quantity / per : line.quantity;
+    if (factor) value *= Number(factor);
+
+    // El agua del arroz se calcula desde los gramos de arroz pero se sirve en
+    // litros, así que la unidad se puede forzar.
+    if (unitOverride === "L") {
+      return `${(Math.round(value / 100) / 10).toLocaleString("es-CL")} L`;
+    }
+    // Las unidades van sólo como número: el sustantivo lo pone la frase, para
+    // que no salga "los 2 unidades de huevo".
+    if (ingredient.unit === "unidad") return String(Math.round(value));
+    if (value >= 1000) {
+      const big = value / 1000;
+      const label = ingredient.unit === "ml" ? "L" : "kg";
+      return `${(Math.round(big * 10) / 10).toLocaleString("es-CL")} ${label}`;
+    }
+    return `${Math.round(value).toLocaleString("es-CL")} ${ingredient.unit}`;
+  });
+}

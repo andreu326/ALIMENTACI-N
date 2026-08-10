@@ -54,6 +54,13 @@ export type RecipeIngredient = {
 };
 
 export type RecipeStep = {
+  /**
+   * Puede traer marcadores `{ingredienteId}` que se reemplazan por la cantidad
+   * real de la receta al mostrarse. Escribir los gramos a mano hace que las
+   * instrucciones queden mintiendo apenas se ajustan las porciones.
+   * `{arroz}` → cantidad de la tanda · `{arroz/}` → por porción
+   * `{arroz*2}` → cantidad de la tanda multiplicada (agua, por ejemplo)
+   */
   text: string;
   /** Minutos que toma el paso. Los que son de espera se marcan aparte. */
   minutes?: number;

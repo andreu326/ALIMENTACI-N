@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
 import { MealArt } from "@/components/app/meal-art";
 import { quantityLabel } from "@/components/app/bits";
-import { getBatch, getBatchSession } from "@/utils/mealprep-calculations";
+import { getBatch, getBatchSession, renderStep, resolvedIngredients } from "@/utils/mealprep-calculations";
 
 /** Minutos en algo legible: 95 → "1 h 35". */
 function hhmm(minutes: number): string {
@@ -17,6 +17,7 @@ function hhmm(minutes: number): string {
 export function CookView() {
   const { state } = useMealPrep();
   const batches = useMemo(() => getBatch(state), [state]);
+  const ingredients = useMemo(() => resolvedIngredients(state), [state]);
   const session = useMemo(() => getBatchSession(batches), [batches]);
   const [open, setOpen] = useState<string | null>(batches[0]?.recipe.id ?? null);
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -124,7 +125,7 @@ export function CookView() {
                         >
                           <span className="step-num num">{i + 1}</span>
                           <span>
-                            <span className="step-text">{step.text}</span>
+                            <span className="step-text">{renderStep(step.text, b.recipe, ingredients)}</span>
                             {step.minutes ? (
                               <span className="step-time num">
                                 {step.minutes} min{step.passive ? " · sin atender" : ""}
@@ -141,7 +142,7 @@ export function CookView() {
                   <p className="note"><strong>Guardar.</strong> {b.recipe.storage}</p>
                 ) : null}
                 {b.recipe.daily ? (
-                  <p className="note"><strong>Cada día.</strong> {b.recipe.daily}</p>
+                  <p className="note"><strong>Cada día.</strong> {renderStep(b.recipe.daily, b.recipe, ingredients)}</p>
                 ) : null}
               </div>
             </div>
