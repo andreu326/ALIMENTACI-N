@@ -1015,3 +1015,17 @@ ul, ol { padding: 0; list-style: none; }
 }
 .covers strong { color: var(--c8); font-weight: 500; }
 .covers-sub { display: block; font-size: var(--text-sm); color: var(--c5); margin-top: 2px; }
+
+.group-head {
+  padding-bottom: var(--sp-md);
+  margin-bottom: var(--sp-xs);
+  border-bottom: 1px solid var(--line, var(--edge));
+}
+.group-hint {
+  font-size: var(--text-sm);
+  color: var(--c5);
+  line-height: 1.55;
+  margin-top: var(--sp-xs);
+  max-width: 60ch;
+}
+.group-hint strong { color: var(--c7); font-weight: 500; }

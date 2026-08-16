@@ -81,8 +81,28 @@ export function CookView() {
 
       {[...tanda, ...diarias].map((b, index) => {
         const isOpen = open === b.recipe.id;
+        const primeraTanda = index === 0 && tanda.length > 0;
+        const primeraDiaria = index === tanda.length && diarias.length > 0;
         return (
           <section key={b.recipe.id} className="section" style={{ ["--i" as string]: 2 + index }}>
+            {primeraTanda ? (
+              <div className="group-head">
+                <h2 className="section-title">Tanda semanal</h2>
+                <p className="group-hint">
+                  Se cocina una vez y rinde {b.recipe.servings} días. Las cantidades
+                  de los pasos son <strong>el total de la semana</strong>.
+                </p>
+              </div>
+            ) : null}
+            {primeraDiaria ? (
+              <div className="group-head">
+                <h2 className="section-title">Al momento</h2>
+                <p className="group-hint">
+                  Se hace fresco cada día. Las cantidades de los pasos son{" "}
+                  <strong>de una sola porción</strong>.
+                </p>
+              </div>
+            ) : null}
             <button
               type="button"
               className="meal"
@@ -145,7 +165,9 @@ export function CookView() {
                 ) : null}
 
                 <p className="field-label" style={{ marginTop: "var(--sp-lg)" }}>
-                  {b.recipe.prepMode === "daily" ? "Cantidades de una porción" : "Cantidades de la tanda"}
+                  {b.recipe.prepMode === "daily"
+                    ? "Cantidades de una porción"
+                    : `Cantidades para los ${b.recipe.servings} días`}
                 </p>
                 <ul className="rows" style={{ marginTop: "var(--sp-xs)" }}>
                   {b.lines.map((line) => (
