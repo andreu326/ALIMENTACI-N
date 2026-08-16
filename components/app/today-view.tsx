@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PLAN_START } from "@/data/seed";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
 import { MacroRings } from "@/components/app/rings";
 import { MealArt } from "@/components/app/meal-art";
@@ -12,7 +11,7 @@ import { ExtrasEditor } from "@/components/app/extras";
 import { PortionSuggestion } from "@/components/app/suggestion";
 import { CheckMark } from "@/components/app/bits";
 import {
-  daysBetween, formatCLP, formatDate, getConsumed, getRecipeTotals, getPlan, todayKey,
+  daysBetween, formatCLP, getPlanStart, formatDate, getConsumed, getRecipeTotals, getPlan, todayKey,
 } from "@/utils/mealprep-calculations";
 
 const LETTERS = ["L", "M", "M", "J", "V", "S", "D"];
@@ -53,7 +52,7 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
   }, [dates, day]);
   const totals = useMemo(() => getConsumed(state, day, dateKey), [state, day, dateKey]);
   const dayLog = state.dayLog[dateKey];
-  const plan = useMemo(() => getPlan(state, PLAN_START, 11), [state]);
+  const plan = useMemo(() => getPlan(state, getPlanStart(state), 11), [state]);
   const ingredients = useMemo(
     () => new Map(state.ingredients.map((i) => [i.id, i])),
     [state.ingredients],

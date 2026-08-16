@@ -4,7 +4,7 @@ import { createContext, use, useEffect, useMemo, useState } from "react";
 import { seedState } from "@/data/seed";
 import type { Ingredient, MealPrepContextValue, MealPrepState, NutritionTargets, PlannedMeal, DayLog, ExtraFood, MeasurementEntry, PlanSettings, Profile, Recipe, TripLogEntry } from "@/types/mealprep";
 
-const STORAGE_KEY = "mealprep-planner:v16";
+const STORAGE_KEY = "mealprep-planner:v17";
 const MealPrepContext = createContext<MealPrepContextValue | null>(null);
 
 function cloneSeed(): MealPrepState {
@@ -16,7 +16,7 @@ function loadState(): { state: MealPrepState; storageAvailable: boolean } {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return { state: cloneSeed(), storageAvailable: true };
     const parsed = JSON.parse(stored) as MealPrepState;
-    if (parsed.version !== 16 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
+    if (parsed.version !== 17 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
     return { state: parsed, storageAvailable: true };
   } catch {
     return { state: cloneSeed(), storageAvailable: false };

@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PLAN_START } from "@/data/seed";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
 import { Chevron } from "@/components/app/bits";
 import type { Profile } from "@/types/mealprep";
 import {
-  ACTIVITY_LEVELS, formatDate, getWeightProjection, todayKey,
+  ACTIVITY_LEVELS, formatDate, getPlanStart, getWeightProjection, todayKey,
 } from "@/utils/mealprep-calculations";
 
 /** Curva de proyección contra pesajes reales. Monocromo: la proyección es fina
@@ -138,7 +137,7 @@ export function WeightSection({ onOpenProfile }: { onOpenProfile: () => void }) 
   const [entry, setEntry] = useState("");
 
   const projection = useMemo(
-    () => getWeightProjection(state, PLAN_START, 11),
+    () => getWeightProjection(state, getPlanStart(state), 11),
     [state],
   );
 

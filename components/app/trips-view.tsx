@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PLAN_START } from "@/data/seed";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
 import { TripCalendar } from "@/components/app/calendar";
 import { CadenceSettings } from "@/components/app/cadence";
 import { Chevron, quantityLabel } from "@/components/app/bits";
 import type { TripStatus } from "@/types/mealprep";
-import { formatCLP, formatDate, getFeriaPlan, getPlan } from "@/utils/mealprep-calculations";
+import { formatCLP, getPlanStart, formatDate, getFeriaPlan, getPlan } from "@/utils/mealprep-calculations";
 
 type Mode = "calendario" | "lista";
 
@@ -21,7 +20,7 @@ export function TripsView({ onOpenTrip }: { onOpenTrip: (index: number) => void 
   const [mode, setMode] = useState<Mode>("calendario");
   const [feriaDays, setFeriaDays] = useState(30);
 
-  const plan = useMemo(() => getPlan(state, PLAN_START, 11), [state]);
+  const plan = useMemo(() => getPlan(state, getPlanStart(state), 11), [state]);
   const feria = useMemo(() => getFeriaPlan(state, feriaDays), [state, feriaDays]);
 
   const statusOf = (index: number): TripStatus => state.tripLog[index]?.status ?? "pendiente";
@@ -35,7 +34,7 @@ export function TripsView({ onOpenTrip }: { onOpenTrip: (index: number) => void 
   return (
     <div className="page stagger">
       <header style={{ ["--i" as string]: 0, paddingTop: "var(--sp-lg)" }}>
-        <p className="eyebrow">11 meses desde {formatDate(PLAN_START)}</p>
+        <p className="eyebrow">11 meses desde {formatDate(getPlanStart(state))}</p>
         <h1 className="title">{plan.trips.length} viajes</h1>
         <p className="num" style={{ fontSize: "var(--text-2xl)", fontWeight: 500, letterSpacing: "-0.045em", marginTop: "var(--sp-md)", lineHeight: 1 }}>
           {formatCLP(plan.totalCost)}

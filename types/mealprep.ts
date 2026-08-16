@@ -213,6 +213,14 @@ export type PortionSuggestion = {
  * total, sin cambiar el régimen que viene después.
  */
 export type PlanSettings = {
+  /**
+   * Día de la semana en que se compra (0 domingo … 6 sábado). El plan se ancla
+   * al próximo, no a una fecha fija: una constante en el código queda vencida a
+   * los pocos días y la app termina mostrando compras que ya pasaron.
+   */
+  shoppingWeekday: number;
+  /** Ancla explícita. Si está, manda sobre `shoppingWeekday`. */
+  startDate?: string;
   firstTripDays: number;
   firstTripStrategy: "value" | "cash";
   cadenceDays: number;
@@ -259,7 +267,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 16;
+  version: 17;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];

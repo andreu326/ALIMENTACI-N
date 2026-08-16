@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PLAN_START } from "@/data/seed";
 import { useMealPrep } from "@/components/providers/mealprep-provider";
-import { formatCLP, getTripPlan } from "@/utils/mealprep-calculations";
+import { formatCLP, getPlanStart, getTripPlan } from "@/utils/mealprep-calculations";
 
 const ARRANQUES = [
   { days: 7,  strategy: "cash" as const,  label: "Parche",   hint: "sólo la semana que viene" },
@@ -28,7 +27,7 @@ export function CadenceSettings() {
   // Se calcula cada opción para poder mostrar la consecuencia, no sólo el nombre.
   const preview = useMemo(() => {
     const build = (first: { days: number; strategy: "value" | "cash" }, cadence: number) =>
-      getTripPlan(state, PLAN_START, 11, cadence, s.strategy, first);
+      getTripPlan(state, getPlanStart(state), 11, cadence, s.strategy, first);
     return {
       arranques: ARRANQUES.map((a) => ({
         ...a,

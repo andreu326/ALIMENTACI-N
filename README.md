@@ -38,6 +38,11 @@ La diferencia sale de tres cosas:
 
 ## Cadencia
 
+El plan **no se ancla a una fecha fija**: `getPlanStart` devuelve el próximo día
+de compra contando desde hoy (`shoppingWeekday`, viernes por defecto). Una
+constante en el código queda vencida a los pocos días y la app termina mostrando
+"próxima compra" en una fecha ya pasada, que es exactamente lo que ocurrió.
+
 El primer viaje se configura aparte del resto, porque su restricción suele ser
 otra: cuánta plata sale ese día, no cuánto cuesta el año.
 
@@ -224,9 +229,8 @@ intentos fallidos por IP durante 10 minutos.
   los 8 intentos por IP, pero vive en memoria de la función Edge y se reinicia.
 - **El plan sólo se edita en el código.** Recetas, cantidades e ingredientes se
   cambian en `data/seed.ts`. Desde la app sólo se corrigen precios y porciones.
-- **`PLAN_START` está fijo** en `data/seed.ts`. El calendario se reancla cuando
-  se marca un viaje como hecho en otra fecha, pero el arranque sigue siendo esa
-  constante.
+- Los rendimientos de cocción (`cookedYield`) son estimaciones de referencia. Si
+  el arroz rinde 2,5× en vez de 2,7×, los volúmenes de los potes se corren.
 
 ## Ejecutar
 

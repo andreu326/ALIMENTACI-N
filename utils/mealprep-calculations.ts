@@ -812,3 +812,16 @@ export function getStockLevels(state: MealPrepState): StockLevel[] {
 export function addDaysKey(key: string, days: number): string {
   return toKey(addDays(parseDate(key), days));
 }
+
+/**
+ * Desde cuándo corre el plan. Si hay ancla explícita se usa; si no, el próximo
+ * día de compra contando desde hoy. Anclar a una constante del código hacía que
+ * la app siguiera mostrando "próxima compra: vie 7 ago" una semana después.
+ */
+export function getPlanStart(state: MealPrepState): string {
+  if (state.planSettings.startDate) return state.planSettings.startDate;
+  const today = new Date();
+  const target = state.planSettings.shoppingWeekday;
+  const diff = (target - today.getDay() + 7) % 7;
+  return addDaysKey(todayKey(), diff);
+}
