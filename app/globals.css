@@ -513,7 +513,7 @@ ul, ol { padding: 0; list-style: none; }
   inset: auto 0 0 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   height: calc(var(--nav-h) + var(--safe-b));
   padding-bottom: var(--safe-b);
   background: var(--c0);
@@ -522,6 +522,7 @@ ul, ol { padding: 0; list-style: none; }
 
 .nav-item {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1029,3 +1030,110 @@ ul, ol { padding: 0; list-style: none; }
   max-width: 60ch;
 }
 .group-hint strong { color: var(--c7); font-weight: 500; }
+
+/* ---------- niveles de despensa ---------- */
+
+.level-bar {
+  display: block;
+  height: 4px;
+  background: var(--c2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 7px 0 5px;
+}
+.level-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--c6);
+  border-radius: 2px;
+  transition: width 400ms var(--ease-out);
+}
+.level-bar > span[data-low="true"] { background: var(--c8); }
+
+@media (max-width: 380px) {
+  .nav-item { font-size: 9px; letter-spacing: 0; }
+}
+
+/* =========================================================================
+   Escritorio
+   La app se diseñó para el teléfono. En pantalla ancha no se estira el
+   contenido — una línea de 1.400 px es ilegible — sino que la navegación pasa
+   a un costado y las secciones se reparten en dos columnas.
+   ========================================================================= */
+
+@media (min-width: 900px) {
+  :root { --rail: 208px; }
+
+  .shell {
+    padding-left: var(--rail);
+    padding-bottom: var(--sp-2xl);
+  }
+
+  /* La barra inferior se convierte en columna lateral fija. */
+  .nav {
+    inset: 0 auto 0 0;
+    width: var(--rail);
+    height: 100dvh;
+    grid-template-columns: none;
+    grid-auto-rows: max-content;
+    align-content: start;
+    gap: 2px;
+    padding: var(--sp-2xl) var(--sp-sm);
+    border-top: 0;
+    border-right: 1px solid var(--edge-soft);
+  }
+
+  .nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--sp-sm);
+    padding: 11px var(--sp-sm);
+    border-radius: var(--r-md);
+    font-size: var(--text-sm);
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 500;
+  }
+  .nav-item:active { transform: scale(0.98); }
+  .nav-item[aria-current="page"] { background: var(--c1); }
+  @media (hover: hover) and (pointer: fine) {
+    .nav-item:not([aria-current="page"]):hover { background: var(--c1); color: var(--c7); }
+  }
+
+  .page {
+    max-width: 1000px;
+    padding: 0 var(--sp-2xl) var(--sp-3xl);
+  }
+
+  /* Dos columnas: las secciones se reparten sin cortarse por la mitad. */
+  .page > .section,
+  .page > div:has(> .section) {
+    break-inside: avoid;
+  }
+
+  .page.stagger {
+    column-count: 2;
+    column-gap: var(--sp-2xl);
+  }
+  /* El encabezado y las notas de cierre cruzan las dos columnas. */
+  .page.stagger > header,
+  .page.stagger > .note,
+  .page.stagger > .week,
+  .page.stagger > .eyebrow {
+    column-span: all;
+  }
+
+  /* La tira de días es navegación: cruza el ancho y respira. */
+  .week { max-width: 460px; }
+
+  .title { font-size: 34px; }
+  .headline-figure .amount { font-size: 48px; }
+
+  /* El calendario y el paso a paso pierden sentido partidos en dos. */
+  .cal, .steps, .plate { break-inside: avoid; }
+}
+
+/* En pantallas muy anchas no vale la pena seguir creciendo. */
+@media (min-width: 1500px) {
+  .page { max-width: 1180px; }
+}

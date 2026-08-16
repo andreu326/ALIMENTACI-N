@@ -5,10 +5,11 @@ import { TodayView } from "@/components/app/today-view";
 import { TripsView } from "@/components/app/trips-view";
 import { PantryView } from "@/components/app/pantry-view";
 import { CookView } from "@/components/app/cook-view";
+import { WeekView } from "@/components/app/week-view";
 import { TripView } from "@/components/app/trip-view";
 import { ProfileView } from "@/components/app/weight-view";
 
-type Tab = "hoy" | "cocina" | "viajes" | "despensa";
+type Tab = "hoy" | "cocina" | "semana" | "viajes" | "despensa";
 
 const ICONS: Record<Tab, React.ReactElement> = {
   hoy: (
@@ -22,6 +23,12 @@ const ICONS: Record<Tab, React.ReactElement> = {
       <path d="M4 8.2h11v3.4a5.5 5.5 0 0 1-11 0Z" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M15 9.4h1.4a1.3 1.3 0 0 1 0 2.6H15" strokeWidth="1.5" strokeLinecap="round" />
       <path d="M6.6 5.8c0-1.1.9-1.4.9-2.4M11 5.8c0-1.1.9-1.4.9-2.4" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
+  semana: (
+    <svg width="19" height="19" viewBox="0 0 19 19" fill="none" aria-hidden="true">
+      <rect x="2.8" y="4" width="13.4" height="12" rx="2.4" strokeWidth="1.5" />
+      <path d="M2.8 7.8h13.4M6.6 2.4v3M12.4 2.4v3" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   ),
   viajes: (
@@ -40,6 +47,7 @@ const ICONS: Record<Tab, React.ReactElement> = {
 const TABS: { id: Tab; label: string }[] = [
   { id: "hoy", label: "Hoy" },
   { id: "cocina", label: "Cocina" },
+  { id: "semana", label: "Semana" },
   { id: "viajes", label: "Viajes" },
   { id: "despensa", label: "Despensa" },
 ];
@@ -73,6 +81,7 @@ export function Shell() {
               />
             ) : null}
             {tab === "cocina" ? <CookView /> : null}
+            {tab === "semana" ? <WeekView /> : null}
             {tab === "viajes" ? <TripsView onOpenTrip={setTripIndex} /> : null}
             {tab === "despensa" ? <PantryView /> : null}
           </>

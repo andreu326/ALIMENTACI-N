@@ -387,10 +387,10 @@ const recipes: Recipe[] = [
     servings: 7,
     prepMinutes: 20,
     prepMode: "daily",
-    notes: "Se hace fresco cada mañana. Lleva 60 g más de marraqueta que antes: es el único plato sin límite de pote, así que cierra ahí lo que no cabe en los otros dos.",
+    notes: "Se hace fresco cada mañana. Es el único plato sin límite de pote, así que cierra ahí lo que no cabe en los otros dos.",
     ingredients: [
       { ingredientId: "huevo", quantity: 14, component: "Huevos" },
-      { ingredientId: "marraqueta", quantity: 1820, component: "Marraqueta" },
+      { ingredientId: "marraqueta", quantity: 1960, component: "Marraqueta" },
       { ingredientId: "salsa", quantity: 1050, component: "Base de tomate" },
       { ingredientId: "mantecoso", quantity: 175, component: "Huevos" },
       { ingredientId: "margarina", quantity: 28, component: "Base de tomate" },
@@ -415,14 +415,14 @@ const recipes: Recipe[] = [
     servings: 7,
     prepMinutes: 40,
     prepMode: "batch",
-    notes: "669 ml en un pote de 700, con 30 ml de margen para poder tapar. Sin colación: con potes de 700 los dos platos cargan las calorías solos.",
+    notes: "661 ml de 700. Las proporciones son de cocina, no sólo de macros: 30 ml de crema por cada 100 g de pollo cocido, y el pollo cocido es 0,47 del arroz, que es lo que hace que sea arroz con pollo y no pollo con arroz.",
     ingredients: [
       { ingredientId: "pollo", quantity: 1610, component: "Pollo a la crema" },
-      { ingredientId: "arroz", quantity: 980, component: "Arroz" },
-      { ingredientId: "cebolla", quantity: 210, component: "Pollo a la crema" },
-      { ingredientId: "crema", quantity: 210, component: "Pollo a la crema" },
+      { ingredientId: "arroz", quantity: 910, component: "Arroz" },
+      { ingredientId: "cebolla", quantity: 245, component: "Pollo a la crema" },
+      { ingredientId: "crema", quantity: 350, component: "Pollo a la crema" },
       { ingredientId: "ajicolor", quantity: 14, component: "Pollo a la crema" },
-      { ingredientId: "aceite", quantity: 35, component: "Pollo a la crema" },
+      { ingredientId: "aceite", quantity: 42, component: "Pollo a la crema" },
       { ingredientId: "sal", quantity: 28, component: "Arroz" },
     ],
     steps: [
@@ -444,13 +444,12 @@ const recipes: Recipe[] = [
     servings: 7,
     prepMinutes: 35,
     prepMode: "batch",
-    notes: "669 ml por pote. Las lentejas van deshechas en la salsa: suben la proteína sin ocupar volumen ni sabor.",
+    notes: "675 ml de 700. La salsa es 0,65 del fideo ya cocido, que es la proporción a la que la salsa alcanza a cubrir sin que quede nadando. Comparar salsa contra fideo crudo engaña: el fideo triplica al cocerse.",
     ingredients: [
-      { ingredientId: "fideos", quantity: 700, component: "Fideos" },
-      { ingredientId: "molida", quantity: 1120, component: "Salsa" },
-      { ingredientId: "salsa", quantity: 980, component: "Salsa" },
-      { ingredientId: "lentejas", quantity: 245, component: "Salsa" },
-      { ingredientId: "cebolla", quantity: 210, component: "Salsa" },
+      { ingredientId: "fideos", quantity: 840, component: "Fideos" },
+      { ingredientId: "molida", quantity: 1050, component: "Salsa" },
+      { ingredientId: "salsa", quantity: 1260, component: "Salsa" },
+      { ingredientId: "cebolla", quantity: 245, component: "Salsa" },
       { ingredientId: "quesocrema", quantity: 175, component: "Salsa" },
       { ingredientId: "ajo", quantity: 21, component: "Salsa" },
       { ingredientId: "oregano", quantity: 7, component: "Salsa" },
@@ -459,11 +458,9 @@ const recipes: Recipe[] = [
       { ingredientId: "sal", quantity: 21, component: "Fideos" },
     ],
     steps: [
-      { text: "Enjuaga {lentejas} de lentejas y ponlas a hervir en agua sin sal.", minutes: 25, passive: true },
-      { text: "Pica {cebolla} de cebolla y {ajo} de ajo mientras hierven.", minutes: 6 },
+      { text: "Pica {cebolla} de cebolla y {ajo} de ajo bien finos.", minutes: 6 },
       { text: "Dora la cebolla y el ajo, agrega {molida} de carne molida y deshazla con la cuchara hasta que pierda el color rosado.", minutes: 12 },
-      { text: "Suma {salsa} de salsa de tomate, el orégano, el comino y la pimienta. Deja reducir a fuego bajo.", minutes: 12, passive: true },
-      { text: "Escurre las lentejas y échalas a la salsa. Quedan deshechas y ni se notan.", minutes: 2 },
+      { text: "Suma {salsa} de salsa de tomate, el orégano, el comino y la pimienta. Deja reducir a fuego bajo hasta que espese pero siga siendo salsa.", minutes: 15, passive: true },
       { text: "Apaga y recién ahí incorpora {quesocrema} de queso crema, revolviendo hasta que se derrita. Si lo echas hirviendo se corta.", minutes: 3 },
       { text: "Cuece {fideos} de fideos al dente en agua con la sal: van a seguir ablandándose al recalentar.", minutes: 9 },
       { text: "Reparte en {porciones} potes: {plato:Fideos} de fideos y {plato:Salsa} de salsa encima. Enfría destapado antes de tapar.", minutes: 8 },
@@ -474,7 +471,7 @@ const recipes: Recipe[] = [
 ];
 
 export const seedState: MealPrepState = {
-  version: 14,
+  version: 16,
   targets: { calories: 2700, protein: 140, carbs: 360, fat: 65, weeklyBudget: 30000 },
   ingredients,
   recipes,
@@ -491,6 +488,7 @@ export const seedState: MealPrepState = {
   dayLog: {},
   priceOverrides: {},
   containerMl: 700,
+  stock: {},
   // Arranque parche: el viernes 7 se compra sólo la semana, con los formatos que
   // menos plata sacan ese día. Desde el segundo viaje se pasa a régimen mensual.
   planSettings: {

@@ -219,6 +219,35 @@ export type PlanSettings = {
   strategy: "value" | "cash";
 };
 
+/** Lo que hay en casa de un ingrediente, medido en una fecha. */
+export type StockEntry = {
+  /** Cantidad en la unidad base del ingrediente. */
+  qty: number;
+  /** Fecha de la medición. Desde ahí se descuenta el consumo diario. */
+  date: string;
+};
+
+export type StockLevel = {
+  ingredientId: string;
+  name: string;
+  unit: BaseUnit;
+  source: SupplySource;
+  /** Lo que debería quedar hoy, descontando el consumo desde la medición. */
+  qty: number;
+  /** Consumo diario del plan. */
+  perDay: number;
+  /** Días que alcanza lo que queda. */
+  daysLeft: number;
+  /** Fecha en que se acaba. */
+  runsOut: string;
+  /** Cuánto dura una compra completa, para dibujar el nivel. */
+  fullQty: number;
+  /** 0 a 1. */
+  level: number;
+  /** true si no se ha registrado nunca. */
+  unknown: boolean;
+};
+
 export type TripStatus = "pendiente" | "hecho" | "saltado";
 
 export type TripLogEntry = {
@@ -230,7 +259,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 14;
+  version: 16;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];
@@ -245,6 +274,8 @@ export type MealPrepState = {
   /** Precio corregido en tienda, por id de formato. */
   priceOverrides: Record<string, number>;
   planSettings: PlanSettings;
+  /** Nivel de despensa por ingrediente. */
+  stock: Record<string, StockEntry>;
   /** Capacidad de los potes de meal prep, en ml. */
   containerMl: number;
   /** Indexado por número de viaje. */
@@ -349,6 +380,8 @@ export type MealPrepActions = {
   removeExtra: (date: string, id: string) => void;
   setPriceOverride: (formatId: string, price: number | null) => void;
   setPlanSettings: (settings: Partial<PlanSettings>) => void;
+  setStock: (ingredientId: string, qty: number | null) => void;
+  addStock: (ingredientId: string, qty: number) => void;
   scalePortions: (factorByIngredient: Record<string, number>) => void;
   setTripStatus: (index: number, entry: TripLogEntry | null) => void;
   saveIngredient: (ingredient: Ingredient) => void;
