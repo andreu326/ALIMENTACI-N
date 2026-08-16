@@ -1007,3 +1007,11 @@ ul, ol { padding: 0; list-style: none; }
 }
 
 .plate-parts { font-size: var(--text-sm); color: var(--c5); margin-top: 6px; line-height: 1.5; }
+
+.covers {
+  font-size: var(--text-md);
+  color: var(--c6);
+  margin-top: var(--sp-sm);
+}
+.covers strong { color: var(--c8); font-weight: 500; }
+.covers-sub { display: block; font-size: var(--text-sm); color: var(--c5); margin-top: 2px; }

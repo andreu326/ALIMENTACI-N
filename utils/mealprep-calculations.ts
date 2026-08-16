@@ -270,6 +270,7 @@ export function getTripPlan(
         formatLabel: best.format.label,
         cost: best.cost,
         coversDays: Math.floor(after / use),
+        runsOut: toKey(addDays(cursor, Math.floor(after / use))),
         forcedByMinimum: best.forcedByMinimum,
       });
     }
@@ -290,6 +291,7 @@ export function getTripPlan(
     trips.push({
       index,
       date: toKey(cursor),
+      coversUntil: toKey(addDays(cursor, span - 1)),
       spanDays: span,
       cost: items.reduce((sum, i) => sum + i.cost, 0),
       items: items.sort((a, b) => b.cost - a.cost),
@@ -639,8 +641,9 @@ function getPlate(recipe: Recipe, map: Map<string, Ingredient>): PlateComponent[
       : raw * (ingredient.cookedYield ?? 1);
 
     const group = groups.get(line.component)
-      ?? { name: line.component, grams: 0, parts: [] };
+      ?? { name: line.component, grams: 0, ml: 0, parts: [] };
     group.grams += cooked;
+    group.ml += cooked / (ingredient.densityCooked ?? 1);
     group.parts.push({
       name: ingredient.name,
       raw: round(raw, 1),
@@ -651,8 +654,8 @@ function getPlate(recipe: Recipe, map: Map<string, Ingredient>): PlateComponent[
   }
 
   return [...groups.values()]
-    .map((g) => ({ ...g, grams: round(g.grams) }))
-    .sort((a, b) => b.grams - a.grams);
+    .map((g) => ({ ...g, grams: round(g.grams), ml: round(g.ml) }))
+    .sort((a, b) => b.ml - a.ml);
 }
 
 /**
@@ -684,7 +687,8 @@ export function getBatch(state: MealPrepState): BatchRecipe[] {
       .filter((s) => !s.passive)
       .reduce((sum, s) => sum + (s.minutes ?? 0), 0);
     const totalMinutes = recipe.steps.reduce((sum, s) => sum + (s.minutes ?? 0), 0);
-    return { recipe, lines, activeMinutes, totalMinutes, plate };
+    const plateMl = round(plate.reduce((sum, c) => sum + c.ml, 0));
+    return { recipe, lines, activeMinutes, totalMinutes, plate, plateMl };
   });
 }
 

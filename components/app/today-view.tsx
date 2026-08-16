@@ -211,7 +211,7 @@ export function TodayView({ onOpenTrips, onOpenProfile }: { onOpenTrips: () => v
                 {formatCLP(next.cost)}
               </span>
               <span className="row-sub" style={{ marginTop: 3 }}>
-                {next.items.length} ítems · alcanza {next.spanDays} días
+                {next.items.length} ítems · te dura hasta el {formatDate(next.coversUntil)}
               </span>
             </span>
             <Chevron />

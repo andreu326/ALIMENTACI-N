@@ -107,18 +107,25 @@ export function CookView() {
               <div>
                 {b.plate.length > 0 ? (
                   <>
-                    <p className="field-label" style={{ marginTop: "var(--sp-md)" }}>
-                      Por plato, ya cocido
-                    </p>
+                    <div className="section-head" style={{ marginTop: "var(--sp-md)", marginBottom: 0 }}>
+                      <p className="field-label">Por pote, ya cocido</p>
+                      {b.recipe.prepMode !== "daily" ? (
+                        <span className="section-meta num"
+                          style={{ color: b.plateMl > state.containerMl ? "var(--c8)" : undefined }}>
+                          {b.plateMl} / {state.containerMl} ml
+                          {b.plateMl > state.containerMl ? " · no cabe" : ""}
+                        </span>
+                      ) : null}
+                    </div>
                     <ul className="plate">
                       {b.plate.map((c) => (
                         <li key={c.name}>
                           <div className="plate-head">
                             <span className="plate-name">{c.name}</span>
-                            <span className="plate-grams num">{c.grams} g</span>
+                            <span className="plate-grams num">{c.ml} ml · {c.grams} g</span>
                           </div>
                           <div className="plate-bar" aria-hidden="true">
-                            <span style={{ width: `${(c.grams / b.plate[0].grams) * 100}%` }} />
+                            <span style={{ width: `${(c.ml / b.plate[0].ml) * 100}%` }} />
                           </div>
                           <p className="plate-parts num">
                             {c.parts
@@ -130,9 +137,9 @@ export function CookView() {
                       ))}
                     </ul>
                     <p className="field-note" style={{ marginTop: "var(--sp-md)" }}>
-                      Bajo cada parte va lo que aporta <strong>en crudo</strong>. El
-                      arroz casi triplica su peso al absorber agua; el pollo y la
-                      carne pierden cerca de un tercio al cocinarse.
+                      Bajo cada parte va lo que aporta <strong>en crudo</strong>. Lo
+                      que decide si cabe en el pote son los mililitros, no los gramos:
+                      los fideos pesan poco pero ocupan mucho.
                     </p>
                   </>
                 ) : null}

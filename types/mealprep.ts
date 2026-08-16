@@ -42,6 +42,8 @@ export type Ingredient = {
    * plan no sirven para servir desde la olla.
    */
   cookedYield?: number;
+  /** g/ml del ingrediente ya cocido, para saber si cabe en el pote. */
+  densityCooked?: number;
   /** Días que aguanta cerrado, en su envase original. */
   shelfLifeDays: number;
   /**
@@ -113,6 +115,8 @@ export type PlateComponent = {
   name: string;
   /** Gramos servidos por plato. */
   grams: number;
+  /** Volumen que ocupa, que es lo que decide si cabe en el pote. */
+  ml: number;
   parts: { name: string; raw: number; cooked: number; unit: BaseUnit }[];
 };
 
@@ -122,6 +126,8 @@ export type BatchRecipe = {
   activeMinutes: number;
   totalMinutes: number;
   plate: PlateComponent[];
+  /** Volumen total del plato. */
+  plateMl: number;
 };
 
 export type PlannedMeal = {
@@ -224,7 +230,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 10;
+  version: 12;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];
@@ -239,6 +245,8 @@ export type MealPrepState = {
   /** Precio corregido en tienda, por id de formato. */
   priceOverrides: Record<string, number>;
   planSettings: PlanSettings;
+  /** Capacidad de los potes de meal prep, en ml. */
+  containerMl: number;
   /** Indexado por número de viaje. */
   tripLog: Record<number, TripLogEntry>;
 };
@@ -302,12 +310,16 @@ export type TripItem = {
   cost: number;
   /** Días que alcanza el stock tras esta compra. */
   coversDays: number;
+  /** Fecha en que se agota. */
+  runsOut: string;
   forcedByMinimum: boolean;
 };
 
 export type Trip = {
   index: number;
   date: string;
+  /** Hasta qué día alcanza lo que se compra en este viaje. */
+  coversUntil: string;
   /** Días hasta el siguiente viaje. */
   spanDays: number;
   cost: number;

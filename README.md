@@ -117,6 +117,29 @@ Cada receta trae `steps` con minutos y marca de espera pasiva, `storage` (cómo
 guardar lo que sobra y cuánto aguanta) y `daily` (qué hacer cada día con la
 porción).
 
+### El pote manda
+
+Los potes de meal prep son de 600 ml (`containerMl`) y esa restricción decide el
+plan, no al revés. El plan anterior no cabía: el almuerzo daba 768 ml.
+
+Cada ingrediente tiene `densityCooked`, así que el plato se mide en mililitros y
+no en gramos. Los fideos pesan 180 g y ocupan 256 ml; la salsa pesa 334 g y ocupa
+336 ml. Lo que llena el pote es el volumen.
+
+| plato | volumen |
+|---|---|
+| Arroz con pollo a la crema | 596 / 600 ml |
+| Fideos con carne y queso crema | 592 / 600 ml |
+
+El desayuno y la colación se comen al momento y no ocupan pote.
+
+### Los objetivos no son consistentes
+
+`140 P × 4 + 360 C × 4 + 65 G × 9 = 2.585 kcal`, no 2.700. Faltan 115 kcal, así
+que **los cuatro objetivos no se pueden cumplir a la vez**. Para llegar a 2.700
+con esa proteína y esos carbos, la grasa tiene que ser 78 g. El plan apunta a esa
+cifra coherente y por eso "se pasa" de los 65 declarados.
+
 ### Crudo contra cocido
 
 Las cantidades del plan son **en crudo**, que es como se compra y como se pesa.

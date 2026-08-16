@@ -61,6 +61,13 @@ export function TripView({ index, onBack }: { index: number; onBack: () => void 
         </h1>
         <Figure value={trip.cost} unit={`${trip.items.length} ítems`} />
 
+        <p className="covers">
+          Te dura hasta el <strong>{formatDate(trip.coversUntil)}</strong>
+          <span className="covers-sub">
+            {trip.spanDays} días · {formatCLP(Math.round(trip.cost / trip.spanDays))} por día
+          </span>
+        </p>
+
         <div className="pips" aria-hidden="true">
           {trip.items.map((item) => (
             <span key={item.ingredientId}
@@ -122,7 +129,7 @@ export function TripView({ index, onBack }: { index: number; onBack: () => void 
                       <span className="num">{item.packages}×</span> {item.name}
                     </span>
                     <span className="check-sub">
-                      {item.formatLabel} · alcanza {durationLabel(item.coversDays)}
+                      {item.formatLabel} · hasta el {formatDate(item.runsOut)}
                     </span>
                     {item.forcedByMinimum ? (
                       <span className="flag">mínimo de compra</span>
