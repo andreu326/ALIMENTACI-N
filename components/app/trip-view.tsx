@@ -121,7 +121,16 @@ export function TripView({ index, onBack }: { index: number; onBack: () => void 
                   className="check"
                   data-done={isDone}
                   aria-pressed={isDone}
-                  onClick={() => actions.toggleShopping(keyFor(item.ingredientId))}
+                  onClick={() => {
+                    const yaEstaba = state.checkedShoppingIds.includes(keyFor(item.ingredientId));
+                    actions.toggleShopping(keyFor(item.ingredientId));
+                    // Marcarlo como comprado sube el nivel de despensa.
+                    if (!yaEstaba) {
+                      const ing = state.ingredients.find((x) => x.id === item.ingredientId);
+                      const fmt = ing?.formats.find((f) => f.id === item.formatId);
+                      if (fmt) actions.addStock(item.ingredientId, fmt.quantity * item.packages);
+                    }
+                  }}
                 >
                   <span className="check-box"><CheckMark /></span>
                   <span className="row-main">

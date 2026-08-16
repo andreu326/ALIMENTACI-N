@@ -1,7 +1,7 @@
 import type {
   Ingredient, MealPrepState, Profile, PurchaseFormat, Recipe, RecipeTotals,
   BatchLine, BatchRecipe, ConsumedTotals, MeasurementSite, MeasurementTrend,
-  PlateComponent, PortionSuggestion,
+  PlateComponent, PortionSuggestion, StockLevel,
   ShoppingLine, Trip, TripItem, TripPlan,
   WeightPoint, WeightProjection,
 } from "@/types/mealprep";
@@ -756,4 +756,59 @@ export function renderStep(text: string, recipe: Recipe, ingredients: Ingredient
     }
     return `${Math.round(value).toLocaleString("es-CL")} ${ingredient.unit}`;
   });
+}
+
+// ---------- niveles de despensa ----------
+
+/**
+ * Cuánto queda hoy de cada cosa. Se parte de la última cantidad registrada y se
+ * descuenta el consumo del plan por los días transcurridos. No es una medición
+ * real: es lo que debería quedar si comiste según el plan, y por eso conviene
+ * corregirlo a mano de vez en cuando.
+ */
+export function getStockLevels(state: MealPrepState): StockLevel[] {
+  const daily = getDailyUsage(state);
+  const today = todayKey();
+  const out: StockLevel[] = [];
+
+  for (const ingredient of resolvedIngredients(state)) {
+    const perDay = daily.get(ingredient.id) ?? 0;
+    if (perDay <= 0) continue;
+
+    const entry = state.stock[ingredient.id];
+    const best = pickFormat(ingredient, perDay * state.planSettings.cadenceDays, "value", perDay);
+    const fullQty = best?.purchased ?? perDay * 30;
+
+    if (!entry) {
+      out.push({
+        ingredientId: ingredient.id, name: ingredient.name, unit: ingredient.unit,
+        source: ingredient.source, qty: 0, perDay, daysLeft: 0, runsOut: today,
+        fullQty, level: 0, unknown: true,
+      });
+      continue;
+    }
+
+    const elapsed = Math.max(0, daysBetween(entry.date, today));
+    const qty = Math.max(0, entry.qty - perDay * elapsed);
+    const daysLeft = Math.floor(qty / perDay);
+    out.push({
+      ingredientId: ingredient.id, name: ingredient.name, unit: ingredient.unit,
+      source: ingredient.source,
+      qty: round(qty, ingredient.unit === "unidad" ? 0 : 1),
+      perDay, daysLeft,
+      runsOut: addDaysKey(today, daysLeft),
+      fullQty,
+      level: Math.min(1, fullQty > 0 ? qty / fullQty : 0),
+      unknown: false,
+    });
+  }
+
+  return out.sort((a, b) => {
+    if (a.unknown !== b.unknown) return a.unknown ? 1 : -1;
+    return a.daysLeft - b.daysLeft;
+  });
+}
+
+export function addDaysKey(key: string, days: number): string {
+  return toKey(addDays(parseDate(key), days));
 }

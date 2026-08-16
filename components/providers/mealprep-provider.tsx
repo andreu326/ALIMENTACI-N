@@ -4,7 +4,7 @@ import { createContext, use, useEffect, useMemo, useState } from "react";
 import { seedState } from "@/data/seed";
 import type { Ingredient, MealPrepContextValue, MealPrepState, NutritionTargets, PlannedMeal, DayLog, ExtraFood, MeasurementEntry, PlanSettings, Profile, Recipe, TripLogEntry } from "@/types/mealprep";
 
-const STORAGE_KEY = "mealprep-planner:v14";
+const STORAGE_KEY = "mealprep-planner:v16";
 const MealPrepContext = createContext<MealPrepContextValue | null>(null);
 
 function cloneSeed(): MealPrepState {
@@ -16,7 +16,7 @@ function loadState(): { state: MealPrepState; storageAvailable: boolean } {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return { state: cloneSeed(), storageAvailable: true };
     const parsed = JSON.parse(stored) as MealPrepState;
-    if (parsed.version !== 14 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
+    if (parsed.version !== 16 || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.recipes)) return { state: cloneSeed(), storageAvailable: true };
     return { state: parsed, storageAvailable: true };
   } catch {
     return { state: cloneSeed(), storageAvailable: false };
@@ -91,6 +91,36 @@ export function MealPrepProvider({ children }: { children: React.ReactNode }) {
     setPlanSettings: (settings: Partial<PlanSettings>) => setState((current) => ({
       ...current, planSettings: { ...current.planSettings, ...settings },
     })),
+    setStock: (ingredientId: string, qty: number | null) => setState((current) => {
+      const stock = { ...current.stock };
+      if (qty === null) delete stock[ingredientId];
+      else stock[ingredientId] = { qty, date: new Date().toISOString().slice(0, 10) };
+      return { ...current, stock };
+    }),
+    // Sumar sobre lo que el plan dice que queda hoy, no sobre la última medición:
+    // si no, comprar el día 20 haría reaparecer lo que ya se comió.
+    addStock: (ingredientId: string, qty: number) => setState((current) => {
+      const previous = current.stock[ingredientId];
+      const today = new Date().toISOString().slice(0, 10);
+      let base = 0;
+      if (previous) {
+        const days = Math.max(0, Math.round(
+          (new Date(today).getTime() - new Date(previous.date).getTime()) / 86_400_000));
+        const recipes = new Map(current.recipes.map((r) => [r.id, r]));
+        let weekly = 0;
+        for (const meal of current.plannedMeals) {
+          const recipe = recipes.get(meal.recipeId);
+          if (!recipe || recipe.servings <= 0) continue;
+          for (const line of recipe.ingredients) {
+            if (line.ingredientId === ingredientId) {
+              weekly += line.quantity * (meal.servings / recipe.servings);
+            }
+          }
+        }
+        base = Math.max(0, previous.qty - (weekly / 7) * days);
+      }
+      return { ...current, stock: { ...current.stock, [ingredientId]: { qty: base + qty, date: today } } };
+    }),
     scalePortions: (factorByIngredient: Record<string, number>) => setState((current) => ({
       ...current,
       recipes: current.recipes.map((recipe) => ({
