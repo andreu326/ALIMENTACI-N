@@ -119,8 +119,10 @@ porción).
 
 ### El pote manda
 
-Los potes de meal prep son de 600 ml (`containerMl`) y esa restricción decide el
+Los potes de meal prep son de 700 ml (`containerMl`) y esa restricción decide el
 plan, no al revés. El plan anterior no cabía: el almuerzo daba 768 ml.
+
+Se apunta a ~670 ml y no a 700: llenar al ras deja el pote sin margen para tapar.
 
 Cada ingrediente tiene `densityCooked`, así que el plato se mide en mililitros y
 no en gramos. Los fideos pesan 180 g y ocupan 256 ml; la salsa pesa 334 g y ocupa
@@ -128,10 +130,12 @@ no en gramos. Los fideos pesan 180 g y ocupan 256 ml; la salsa pesa 334 g y ocup
 
 | plato | volumen |
 |---|---|
-| Arroz con pollo a la crema | 596 / 600 ml |
-| Fideos con carne y queso crema | 592 / 600 ml |
+| Arroz con pollo a la crema | 672 / 700 ml |
+| Fideos con carne y queso crema | 683 / 700 ml |
 
-El desayuno y la colación se comen al momento y no ocupan pote.
+El desayuno se come al momento y no ocupa pote, así que es donde se cierra lo que
+no cabe en los otros dos. **No hay colación**: con potes de 700 ml los dos platos
+cargan las calorías solos.
 
 ### Los objetivos no son consistentes
 

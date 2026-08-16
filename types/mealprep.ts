@@ -230,7 +230,7 @@ export type TripLogEntry = {
 };
 
 export type MealPrepState = {
-  version: 12;
+  version: 14;
   targets: NutritionTargets;
   ingredients: Ingredient[];
   recipes: Recipe[];
